@@ -29,7 +29,7 @@ ymn=glmin(Yf);  ymx=glmax(Yf);
 hold off
 for e=1:E; 
 %  mesh(Xf(:,:,e),Yf(:,:,e),Uf(:,:,e));
-   contour(Xf(:,:,e),Yf(:,:,e),Uf(:,:,e),[umn:du:umx]); 
+   contour(Xf(:,:,e),Yf(:,:,e),Uf(:,:,e),[umn:du:umx],'ShowText','on'); 
    axis([xmn xmx ymn ymx]); axis square; hold on
 end;
 %  title(Title)
