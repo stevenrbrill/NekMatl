@@ -5,15 +5,24 @@ close all
 % Navier-Stokes Solver Demo (2D Channel)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-format compact; format longe; clear all
+format compact; format short; clear all
 Re = 1; Pr=0.8; Pe=Re*Pr; 
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=10;E=5; N1=N+1; nL=N1*N1*E; % 10th order 
+N=6;% 10th order  
+Ex=5; % Number of elements in x
+Ey=3; % Number of elements in y
+E=Ex*Ey; % Total number of elements
+N1=N+1; 
 
-Q=makeq(E,N);
-R=maker(Q,E,N);
-[X,Y]=make_geom_channel(E,N);      % Geometry in local form
+% Enrichment information
+psi = @(x,y) y.^2 + 0.*x;
+gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) 2.*y + 0.*x};
+hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) 2 + 0.*y + 0.*x};
+
+Q=makeq(Ex,Ey,N); % Global continuity
+R=maker(Q,Ex,N); % Restriction matrix, applies Dirichlet conditions
+[X,Y]=make_geom_channel(Ex,Ey,N);      % Geometry in local form
 [G,J,ML,RX]=make_coef(X,Y);
 [Ah,Bh,Ch,Dh,z,w]=semhat(N);
 
@@ -25,19 +34,45 @@ Ab=spalloc(nb,nb,nb*N);    %  Generate Abar
 for j=1:nb;
     x=zeros(nb,1); 
     x(j)=1; 
-    Ab(:,j)=abar(x,Dh,G,Q); 
+    Ab(:,j)=abar(x,Dh,G,Q);  % assembled Neumann Operator
 end;
-A=R*Ab*R';
-Bb=reshape(ML,nL,1); 
+A=R*Ab*R'; % Full stiffness matrix
+Bb=reshape(ML,nL,1); % Form Mass matrix
 Bb=diag(Bb); 
 Bb=sparse(Bb); 
-Bb=Q'*Bb*Q; 
-Ma=R*Bb*R';
+Bb=Q'*Bb*Q; % Assembling mass matrix
+Ma=R*Bb*R'; % Full mass matrix
+
+% Assemble enrichment matrices
+[Mp,Sp,T1,T2,z_en,w_en] = enrich_mats(X,Y,E,N,psi,gpsi,hpsi);
+nb = (N+1)^2; 
+for k=1:2
+    Mp_all{k} = zeros(nb*E,nb*E);
+    Sp_all{k} = zeros(nb*E,nb*E);
+    T1_all{k} = zeros(nb*E,1);
+    T2_all{k} = zeros(nb*E,1);
+    for i = 1:E
+        Mp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Mp{k}(:,:,i);
+        Sp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Sp{k}(:,:,i);
+        T1_all{k}((i-1)*nb+1:i*nb) = T1{k}(:,i);
+        T2_all{k}((i-1)*nb+1:i*nb) = T2{k}(:,i);
+    end
+    % TODO: Remove small entries
+    Mp_all{k} = sparse(Mp_all{k});
+    Mp_all{k} = Q'*Mp_all{k}*Q;
+    Sp_all{k} = sparse(Sp_all{k});
+    Sp_all{k} = Q'*Sp_all{k}*Q;
+    
+    T1_all{k} = sparse(T1_all{k});
+    T1_all{k} = Q'*T1_all{k};
+    T2_all{k} = sparse(T2_all{k});
+    T2_all{k} = Q'*T2_all{k};
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-CFL=0.3; dxmin=pi*(z(N1)-z(N))/(2*E); % Get min dx for CFL constraint
+CFL=0.3; dxmin=pi*(z(N1)-z(N))/(2*Ex); % Get min dx for CFL constraint
 Tfinal=150; dt=CFL*dxmin; nstep=ceil(Tfinal/dt); dt=Tfinal/nstep; nstep
 
 
@@ -91,7 +126,11 @@ for step=1:nstep; time=step*dt;
         figure(1)
         plotit(u,X,Y); 
         figure(2)
-        plot(u(1,:,1),Y(1,:,1))
+        for i = 1:Ey
+            plot(u(1,:,1+Ex*(i-1)),Y(1,:,1+Ex*(i-1)),'b')
+            hold on
+        end
+        hold off
         xlim([0,1])
         ylim([-1,1])
         xlabel('u')

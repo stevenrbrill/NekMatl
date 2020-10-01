@@ -1,7 +1,7 @@
-function[Q] =  makeq(E,N)
+function[Q] =  makeq(Ex,Ey,N)
 
 %
-%  Make the Q array for an [ E x 1 ] array of elements of order N
+%  Make the Q array for an [ Ex x Ey ] array of elements of order N
 %
 %  Assumes periodicity in x direction
 %
@@ -22,28 +22,39 @@ function[Q] =  makeq(E,N)
 %        +--- numbered last
 %
 %
+E = Ex*Ey;
 
-m = E*N;  % Number of x locations (counting periodicity)
-n = N+1;  % Number of y locations
+m = Ex*N;  % Number of x locations (counting periodicity)
+n = Ey*N+1;  % Number of y locations
 
 q = zeros(m+1,n);
 
 
 ig0 = 0;
 for j=2:n;
-    ig = ig0+[1:m]; q(1:end-1,j) = ig; q(end,j)=q(1,j); ig0=ig0+m;
+    ig = ig0+[1:m]; 
+    q(1:end-1,j) = ig;
+    q(end,j)=q(1,j); 
+    ig0=ig0+m;
 end;
-j=1; ig = ig0+[1:m]; q(1:end-1,j) = ig; q(end,j)=q(1,j); 
+j=1; 
+ig = ig0+[1:m]; 
+q(1:end-1,j) = ig; 
+q(end,j)=q(1,j); 
 
 % q', pause
 
 N1=N+1; Q=zeros(N1*N1,E);
-i0=1; i1=i0+N; j0=1; j1=j0+N;
-for e=1:E;
-    Q(:,e)=reshape(q(i0:i1,j0:j1),N1*N1,1);
-    i0=i0+N; i1=i0+N; j0=1; j1=j0+N;
-%   qq=reshape(Q(:,e),N1,N1)
-end;
+j0=1; j1=j0+N;
+for ey=1:Ey
+    i0=1; i1=i0+N;
+    for ex=1:Ex;
+        Q(:,(ey-1)*Ex+ex)=reshape(q(i0:i1,j0:j1),N1*N1,1);
+        i0=i0+N; i1=i0+N;
+        %   qq=reshape(Q(:,e),N1,N1)
+    end;
+    j0=j0+N; j1=j0+N;
+end
 %pause
 q=reshape(Q,N1*N1*E,1);
 nL = E*N1*N1; nb=max(max(q)); % nb = nbar
