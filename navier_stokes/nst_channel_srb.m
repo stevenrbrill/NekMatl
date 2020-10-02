@@ -11,7 +11,7 @@ Re = 200; Pr=0.8; Pe=Re*Pr;
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
 N=11; % polynomial order  
 Ex=5; % Number of elements in x
-Ey=7; % Number of elements in y
+Ey=5; % Number of elements in y
 CFL=0.1;
 u_ic = Re/2;
 pert = 0.1;
@@ -26,6 +26,7 @@ psi = @(x,y) y.^2 + 0.*x;
 gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) 2.*y + 0.*x};
 hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) 2 + 0.*y + 0.*x};
 
+disp("Generating Matrices")
 Q=makeq(Ex,Ey,N); % Global continuity
 R=maker(Q,Ex,N); % Restriction matrix, applies Dirichlet conditions
 [X,Y]=make_geom_channel(Ex,Ey,N);      % Geometry in local form
@@ -34,7 +35,6 @@ R=maker(Q,Ex,N); % Restriction matrix, applies Dirichlet conditions
 
 [n,nb]=size(R); 
 nL=N1*N1*E;
-
 
 Ab=spalloc(nb,nb,nb*N);    %  Generate Abar
 for j=1:nb;
@@ -50,6 +50,7 @@ Bb=Q'*Bb*Q; % Assembling mass matrix
 Ma=R*Bb*R'; % Full mass matrix
 
 % Assemble enrichment matrices
+disp("Computing enrichment")
 [Mp,Sp,T1,T2,z_en,w_en] = enrich_mats(X,Y,E,N,psi,gpsi,hpsi);
 nb = (N+1)^2; 
 for k=1:2
@@ -86,9 +87,12 @@ dt=Tfinal/nstep;
 % Print information
 nstep
 dt
-yp1 = (1-Y(1,2))*Re
+yp1 = (1+Y(1,2))*Re
 
+disp("Computing inverse")
+Ai=pinv(full(Ab)); 
 
+disp("Setting Initial Conditions")
 % Initial conditions
 u=u_ic*ones(size(ML)); 
 v=0*ML;
@@ -111,6 +115,7 @@ Fb=reshape(ML.*F,nL,1);
 Fb=Bb\(Q'*Fb);  
 
 
+disp("Timestepping")
 plot1 = 1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for step=1:nstep; time=step*dt;
@@ -145,7 +150,7 @@ for step=1:nstep; time=step*dt;
     vt = b0i*ry; 
 
 %   uL=ut; vL=vt;
-    [uL,vL,pr]=pressure_project(ut,vt,Ab,Q,ML,RX,Dh); % Div-free velocity
+    [uL,vL,pr]=pressure_project(ut,vt,Ai,Q,ML,RX,Dh); % Div-free velocity
     pr = (b0/dt)*pr;
 
     %   Set RHS.                 %Viscous update. %  Convert to local form.
