@@ -6,12 +6,18 @@ close all
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 format compact; format short; clear all
-Re = 1; Pr=0.8; Pe=Re*Pr; 
+Re = 200; Pr=0.8; Pe=Re*Pr; 
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=6;% 10th order  
+N=11; % polynomial order  
 Ex=5; % Number of elements in x
-Ey=3; % Number of elements in y
+Ey=7; % Number of elements in y
+CFL=0.1;
+u_ic = Re/2;
+pert = 0.1;
+f_ic = @(x,y) u_ic*(1-y.^2);
+
+
 E=Ex*Ey; % Total number of elements
 N1=N+1; 
 
@@ -72,25 +78,54 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-CFL=0.3; dxmin=pi*(z(N1)-z(N))/(2*Ex); % Get min dx for CFL constraint
-Tfinal=150; dt=CFL*dxmin; nstep=ceil(Tfinal/dt); dt=Tfinal/nstep; nstep
+dxmin=pi*(z(N1)-z(N))/(2*Ex); % Get min dx for CFL constraint
+Tfinal=150; 
+dt=CFL*dxmin/u_ic; 
+nstep=ceil(Tfinal/dt); 
+dt=Tfinal/nstep; 
+% Print information
+nstep
+dt
+yp1 = (1-Y(1,2))*Re
 
 
-u=ones(size(ML)); u1=u; u2=u; u3=u; fx3=u; fx2=u; fx1=u;
-v=0*ML; v1=v; v2=v; v3=v; fy3=v; fy2=v; fy1=v;
+% Initial conditions
+u=u_ic*ones(size(ML)); 
+v=0*ML;
+
+for e = 1:E
+    for i = 1:N+1
+        for j = 1:N+1
+            u(i,j,e) = f_ic(X(i,j,e),Y(i,j,e))+pert*rand()*u_ic;
+            v(i,j,e) = v(i,j,e)+pert*rand()*u_ic;
+        end
+    end
+end
+
+
+u1=u; u2=u; u3=u; fx3=u; fx2=u; fx1=u;
+v1=v; v2=v; v3=v; fy3=v; fy2=v; fy1=v;
 
 F = ones(size(ML));
 Fb=reshape(ML.*F,nL,1); 
 Fb=Bb\(Q'*Fb);  
 
+
+plot1 = 1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for step=1:nstep; time=step*dt;
 
-    if step==1; b0=1.0;    b= [ -1 0 0 ]';       a=[ 1  0 0 ]'; end;
-    if step==2; b0=1.5;    b=([ -4 1 0 ]')./2;   a=[ 2 -1 0 ]'; end;
-    if step==3; b0=11./6.; b=([ -18 9 -2 ]')./6; a=[ 3 -3 1 ]'; end;
-    if step<=3; H=(Ma+ A*dt/(b0*Re)); [LH,UH]=lu(H); b0i=1./b0; end; % Viscous op
-    if step<=3; Hbar=(Bb+ Ab*dt/(b0*Re)); end; % Viscous op
+    if step==1; b0=1.0;    b= [ -1 0 0 ]';       a=[ 1  0 0 ]'; end
+    if step==2; b0=1.5;    b=([ -4 1 0 ]')./2;   a=[ 2 -1 0 ]'; end
+    if step==3; b0=11./6.; b=([ -18 9 -2 ]')./6; a=[ 3 -3 1 ]'; end
+    if step<=3 
+        H=(Ma+ A*dt/(b0*Re)); 
+        [LH,UH]=lu(H); 
+        b0i=1./b0; 
+    end % Viscous op
+    if step<=3
+        Hbar=(Bb+ Ab*dt/(b0*Re)); 
+    end % Viscous op
 
 %   Nonlinear step - unassembled, not multiplied by mass matrix
 
@@ -122,22 +157,32 @@ for step=1:nstep; time=step*dt;
     v=UH\(LH\v);v=Q*(R'*v);
     v=reshape(v,N1,N1,E);
 
-    if mod(step,20)==0;
-        figure(1)
+    if mod(step,1000)==0
+        if plot1
+            figure(1);
+        else
+            figure(3);
+        end
         plotit(u,X,Y); 
-        figure(2)
+        if plot1
+            figure(2);
+            plot1 = 0;
+        else
+            figure(4);
+            plot1 = 1;
+        end
         for i = 1:Ey
-            plot(u(1,:,1+Ex*(i-1)),Y(1,:,1+Ex*(i-1)),'b')
+            plot(u(1,:,1+Ex*(i-1)),Y(1,:,1+Ex*(i-1)),'b-o')
             hold on
         end
         hold off
-        xlim([0,1])
+%         xlim([0,1])
         ylim([-1,1])
         xlabel('u')
         ylabel('y')
-        pause(.1); 
-        [step time glmax(u)] 
-    end;
+%         pause(.1); 
+        [time glmax(u)] 
+    end
 
-end;
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
