@@ -1,4 +1,4 @@
-clc
+% clc
 clear
 close all
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6,25 +6,26 @@ close all
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 format compact; format short; clear all
-Re = 200; Pr=0.8; Pe=Re*Pr; 
+Re = 1; Pr=0.8; Pe=Re*Pr; 
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=11; % polynomial order  
+N=7; % polynomial order  
 Ex=5; % Number of elements in x
-Ey=5; % Number of elements in y
-CFL=0.1;
+Ey=2; % Number of elements in y
+CFL=0.2;
 u_ic = Re/2;
-pert = 0.1;
-f_ic = @(x,y) u_ic*(1-y.^2);
+pert = 0.0;
+f_ic = @(x,y) 1; %u_ic*(1-y.^2);
 
 
 E=Ex*Ey; % Total number of elements
 N1=N+1; 
 
 % Enrichment information
-psi = @(x,y) y.^2 + 0.*x;
-gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) 2.*y + 0.*x};
-hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) 2 + 0.*y + 0.*x};
+en_on = 1;
+psi = @(x,y) 0.5*(1 - y.^2) + 0.*x;
+gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) -1.*y + 0.*x};
+hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) -1 - 0.*y + 0.*x};
 
 disp("Generating Matrices")
 Q=makeq(Ex,Ey,N); % Global continuity
@@ -50,30 +51,35 @@ Bb=Q'*Bb*Q; % Assembling mass matrix
 Ma=R*Bb*R'; % Full mass matrix
 
 % Assemble enrichment matrices
-disp("Computing enrichment")
-[Mp,Sp,T1,T2,z_en,w_en] = enrich_mats(X,Y,E,N,psi,gpsi,hpsi);
-nb = (N+1)^2; 
-for k=1:2
-    Mp_all{k} = zeros(nb*E,nb*E);
-    Sp_all{k} = zeros(nb*E,nb*E);
-    T1_all{k} = zeros(nb*E,1);
-    T2_all{k} = zeros(nb*E,1);
-    for i = 1:E
-        Mp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Mp{k}(:,:,i);
-        Sp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Sp{k}(:,:,i);
-        T1_all{k}((i-1)*nb+1:i*nb) = T1{k}(:,i);
-        T2_all{k}((i-1)*nb+1:i*nb) = T2{k}(:,i);
+if en_on
+    disp("Computing enrichment")
+    [Mp,Sp,T1,T2,z_en,w_en] = enrich_mats(X,Y,E,N,psi,gpsi,hpsi);
+    nb = (N+1)^2;
+    for k=1:2
+        Mp_all{k} = zeros(nb*E,nb*E);
+        Sp_all{k} = zeros(nb*E,nb*E);
+        T1_all{k} = zeros(nb*E,1);
+        T2_all{k} = zeros(nb*E,1);
+        % TODO: Assemble differently for different elements
+        for i = 1:E
+            Mp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Mp{k}(:,:,i);
+            Sp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Sp{k}(:,:,i);
+            T1_all{k}((i-1)*nb+1:i*nb) = T1{k}(:,i);
+            T2_all{k}((i-1)*nb+1:i*nb) = T2{k}(:,i);
+        end
+        % TODO: Remove small entries
+        Mp_all{k} = sparse(Mp_all{k});
+        Mp_all{k} = R*Q'*Mp_all{k}*Q*R';
+        Sp_all{k} = sparse(Sp_all{k});
+        Sp_all{k} = R*Q'*Sp_all{k}*Q*R';
+        
+        T1_all{k} = sparse(T1_all{k});
+        T1_all{k} = Q'*T1_all{k};
+        T1_rs{k} = reshape(T1{k},[N+1,N+1,E]);
+        T2_all{k} = sparse(T2_all{k});
+        T2_all{k} = Q'*T2_all{k};
+        T2_rs{k} = reshape(T2{k},[N+1,N+1,E]);
     end
-    % TODO: Remove small entries
-    Mp_all{k} = sparse(Mp_all{k});
-    Mp_all{k} = Q'*Mp_all{k}*Q;
-    Sp_all{k} = sparse(Sp_all{k});
-    Sp_all{k} = Q'*Sp_all{k}*Q;
-    
-    T1_all{k} = sparse(T1_all{k});
-    T1_all{k} = Q'*T1_all{k};
-    T2_all{k} = sparse(T2_all{k});
-    T2_all{k} = Q'*T2_all{k};
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -118,24 +124,35 @@ Fb=Bb\(Q'*Fb);
 disp("Timestepping")
 plot1 = 1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-for step=1:nstep; time=step*dt;
-
+for step=1:nstep 
+    time=step*dt;
     if step==1; b0=1.0;    b= [ -1 0 0 ]';       a=[ 1  0 0 ]'; end
     if step==2; b0=1.5;    b=([ -4 1 0 ]')./2;   a=[ 2 -1 0 ]'; end
     if step==3; b0=11./6.; b=([ -18 9 -2 ]')./6; a=[ 3 -3 1 ]'; end
-    if step<=3 
-        H=(Ma+ A*dt/(b0*Re)); 
-        [LH,UH]=lu(H); 
-        b0i=1./b0; 
-    end % Viscous op
     if step<=3
-        Hbar=(Bb+ Ab*dt/(b0*Re)); 
+        if en_on
+            H_x=(Ma + A*dt/(b0*Re) - dt/b0*(Mp_all{1} + Mp_all{2} + Sp_all{1}));
+            H_y=(Ma + A*dt/(b0*Re));
+            [LH_x,UH_x]=lu(H_x);
+            [LH_y,UH_y]=lu(H_y);
+            terms_x = -dt/b0*1/Re*T1_rs{1}-T2_rs{1};
+            terms_y = -dt/b0*1/Re*T1_rs{2}-T2_rs{2};
+        else
+            H=(Ma + A*dt/(b0*Re));
+            [LH_x,UH_x]=lu(H);
+            LH_y = LH_x;
+            UH_y = UH_x;
+            terms_x = zeros(N+1,N+1,E);
+            terms_y = zeros(N+1,N+1,E);
+        end
+        
+        b0i=1./b0;
     end % Viscous op
 
 %   Nonlinear step - unassembled, not multiplied by mass matrix
 
-    fx1 = -convl(u,RX,Dh,u,v) + F; % du = Cu  (without mass matrix)
-    fy1 = -convl(v,RX,Dh,u,v); % dv = Cv
+    fx1 = -convl(u,RX,Dh,u,v) + F + terms_x; % du = Cu  
+    fy1 = -convl(v,RX,Dh,u,v) + terms_y; % dv = Cv
 
     rx  = a(1)*fx1+a(2)*fx2+a(3)*fx3; % kth-order extrapolation
     ry  = a(1)*fy1+a(2)*fy2+a(3)*fy3;
@@ -155,20 +172,27 @@ for step=1:nstep; time=step*dt;
 
     %   Set RHS.                 %Viscous update. %  Convert to local form.
     u=R*(Q'*reshape(ML.*uL,nL,1));
-    u=UH\(LH\u);u=Q*(R'*u);
+    u=UH_x\(LH_x\u);
+    u=Q*(R'*u);
     u=reshape(u,N1,N1,E);
     
     v=R*(Q'*reshape(ML.*vL,nL,1));
-    v=UH\(LH\v);v=Q*(R'*v);
+    v=UH_y\(LH_y\v);
+    v=Q*(R'*v);
     v=reshape(v,N1,N1,E);
 
-    if mod(step,1000)==0
+    if mod(step,100)==0
+        if en_on
+            u_recon = u + psi(X,Y);
+        else
+            u_recon = u;
+        end
         if plot1
             figure(1);
         else
             figure(3);
         end
-        plotit(u,X,Y); 
+        plotit(u_recon,X,Y); 
         if plot1
             figure(2);
             plot1 = 0;
@@ -177,7 +201,7 @@ for step=1:nstep; time=step*dt;
             plot1 = 1;
         end
         for i = 1:Ey
-            plot(u(1,:,1+Ex*(i-1)),Y(1,:,1+Ex*(i-1)),'b-o')
+            plot(u_recon(1,:,1+Ex*(i-1)),Y(1,:,1+Ex*(i-1)),'b-o')
             hold on
         end
         hold off
@@ -186,7 +210,7 @@ for step=1:nstep; time=step*dt;
         xlabel('u')
         ylabel('y')
 %         pause(.1); 
-        [time glmax(u)] 
+        [time glmax(u_recon)] 
     end
 
 end
