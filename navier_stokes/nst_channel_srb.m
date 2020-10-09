@@ -1,24 +1,26 @@
 % clc
-clear
+% clear
 close all
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Navier-Stokes Solver Demo (2D Channel)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-format compact; format short; clear all
-Re = 180; Pr=0.8; Pe=Re*Pr; 
+format compact;
+format short; 
+Re = 1; Pr=0.8; Pe=Re*Pr; 
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=7; % polynomial order  
-Ex=5; % Number of elements in x
-Ey=5; % Number of elements in y
+N=4; % polynomial order  
+Ex=3; % Number of elements in x
+Ey=3; % Number of elements in y
 CFL=0.1;
 u_ic = Re;
-pert = 0.1;
-f_ic = @(x,y) u_ic*(1-y.^8);
+pert = 0.0;
+f_ic = @(x,y) 0*u_ic*(1-y.^2);
 
 % Enrichment information
-en_on = 0;
+en_on = 1;
+N_en_y = 2;
 psi = @(x,y) 0.5*(1 - y.^2) + 0.*x;
 gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) -1.*y + 0.*x};
 hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) -1 - 0.*y + 0.*x};
@@ -76,7 +78,8 @@ psi_xy = psi(X,Y);
 if en_on
     disp("Computing enrichment")
     [Mp,Sp,T1,T2,z_en,w_en] = enrich_mats(X,Y,E,N,psi,gpsi,hpsi);
-    nb = (N+1)^2;
+    nb = N1*N1;
+        
     for k=1:2
         Mp_all{k} = zeros(nb*E,nb*E);
         Sp_all{k} = zeros(nb*E,nb*E);
@@ -84,22 +87,29 @@ if en_on
         T2_all{k} = zeros(nb*E,1);
         
         % TODO: Assemble differently for different elements
-        for i = 1:E
-            Mp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Mp{k}(:,:,i);
-            Sp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Sp{k}(:,:,i);
-            T1_all{k}((i-1)*nb+1:i*nb) = T1{k}(:,i);
-            T2_all{k}((i-1)*nb+1:i*nb) = T2{k}(:,i);
+        for iy = 1:Ey
+            for ix = 1:Ex
+                if ((iy <= N_en_y) || (iy > Ex-N_en_y))
+                    i = (iy-1)*Ex+ix;
+                    Mp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Mp{k}(:,:,i);
+                    Sp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Sp{k}(:,:,i);
+%                     T1_all{k}((i-1)*nb+1:i*nb) = T1{k}(:,i);
+%                     T2_all{k}((i-1)*nb+1:i*nb) = T2{k}(:,i);
+                    T1{k}(:,i) = 0.*T1{k}(:,i);
+                    T2{k}(:,i) = 0.*T2{k}(:,i);
+                end
+            end
         end
         Mp_all{k} = sparse(Mp_all{k});
         Mp_all{k} = R*Q'*Mp_all{k}*Q*R';
         Sp_all{k} = sparse(Sp_all{k});
         Sp_all{k} = R*Q'*Sp_all{k}*Q*R';
         
-        T1_all{k} = sparse(T1_all{k});
-        T1_all{k} = Q'*T1_all{k};
+%         T1_all{k} = sparse(T1_all{k});
+        
         T1_rs{k} = reshape(T1{k},[N+1,N+1,E]);
-        T2_all{k} = sparse(T2_all{k});
-        T2_all{k} = Q'*T2_all{k};
+%         T2_all{k} = sparse(T2_all{k});
+%         T2_all{k} = Q'*T2_all{k};
         T2_rs{k} = reshape(T2{k},[N+1,N+1,E]);
     end
     
@@ -158,7 +168,7 @@ uv = [u;v];
 disp("Timestepping")
 plot1 = 1;
 time = 0;
-plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,plot1);
+plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for step=1:nstep 
     time=step*dt;
@@ -171,16 +181,17 @@ for step=1:nstep
             H_y=(Ma + A*dt/(b0*Re));
             [LH_x,UH_x]=lu(H_x);
             [LH_y,UH_y]=lu(H_y);
-            terms_x = 1/Re*T1_rs{1}-T2_rs{1};
-            terms_y = 1/Re*T1_rs{2}-T2_rs{2};
+            terms_x = 1/Re*-T1_rs{1}-T2_rs{1};
+            terms_y = 1/Re*-T1_rs{2}-T2_rs{2};
             
-            H_uv = (b0/dt*Ma_uv + A_uv/(Re) + (Mp_uv + Sp_uv));
+            H_uv = (Ma_uv + A_uv*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
             [LH_uv,UH_uv]=lu(H_uv);
         else
             H=(Ma + A*dt/(b0*Re));
             [LH_x,UH_x]=lu(H);
             LH_y = LH_x;
             UH_y = UH_x;
+
             terms_x = zeros(N+1,N+1,E);
             terms_y = zeros(N+1,N+1,E);
             
@@ -229,8 +240,8 @@ for step=1:nstep
     
     
 %% Output
-    if mod(step,1000)==0
-        plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,plot1);
+    if mod(step,100)==0
+        plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
     end
 
 end

@@ -1,4 +1,4 @@
-function plot1_new = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,plot1)
+function plot1_new = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1)
 
 u_mean = zeros(Ey*length(u(1,:,1)),1);
 for i = 1:Ey
@@ -10,16 +10,25 @@ for i = 1:Ey
 end
 if en_on
     for i = 1:Ey
-        u_mean((i-1)*(N+1)+1:(i)*(N+1)) = u_mean((i-1)*(N+1)+1:(i)*(N+1)) + ((N+1)*Ex)*2.*psi_xy(1,:,(i-1)*Ex+1)';
+        if ((i <= N_en_y) || (i > Ex-N_en_y))
+            u_mean((i-1)*(N+1)+1:(i)*(N+1)) = u_mean((i-1)*(N+1)+1:(i)*(N+1)) + (Ex*2)*psi_xy(1,:,(i-1)*Ex+1)';
+        end
     end
 end
 u_mean = u_mean/(2*Ex);
 
+u_recon = u;
 if en_on
-    u_recon = u + psi_xy;
-else
-    u_recon = u;
+    for iy = 1:Ey
+        for ix = 1:Ex
+            if ((iy <= N_en_y) || (iy > Ex-N_en_y))
+                i = (iy-1)*Ex+ix;
+                u_recon(:,:,i) = u(:,:,i) + psi_xy(:,:,i);
+            end
+        end
+    end
 end
+
 if plot1
     figure(1);
 else
