@@ -9,7 +9,7 @@ format compact; format short; clear all
 Re = 180; Pr=0.8; Pe=Re*Pr; 
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=11; % polynomial order  
+N=7; % polynomial order  
 Ex=5; % Number of elements in x
 Ey=5; % Number of elements in y
 CFL=0.1;
@@ -149,7 +149,8 @@ u1=u; u2=u; u3=u; fx3=u; fx2=u; fx1=u;
 v1=v; v2=v; v3=v; fy3=v; fy2=v; fy1=v;
 
 F = ones(size(ML));
-Fb=reshape(ML.*F,nL,1); 
+Fb=reshape(ML.*F,nL,1); %% Output
+
 Fb=Bb\(Q'*Fb);  
 
 uv = [u;v];
@@ -157,7 +158,7 @@ uv = [u;v];
 disp("Timestepping")
 plot1 = 1;
 time = 0;
-plot1 = post_channel(N,Ex,Ey,X,Y,Ys,en_on,time,u,psi_xy,plot1);
+plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,plot1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for step=1:nstep 
     time=step*dt;
@@ -229,7 +230,7 @@ for step=1:nstep
     
 %% Output
     if mod(step,1000)==0
-        plot1 = post_channel(N,Ex,Ey,X,Y,Ys,en_on,time,u,psi_xy,plot1);
+        plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,plot1);
     end
 
 end
