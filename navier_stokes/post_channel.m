@@ -10,7 +10,7 @@ for i = 1:Ey
 end
 if en_on
     for i = 1:Ey
-        u_mean((i-1)*(N+1)+1:(i)*(N+1)) = u_mean((i-1)*(N+1)+1:(i)*(N+1)) + ((N+1)*Ex)*w.*psi_xy(1,:,(i-1)*Ex+1);
+        u_mean((i-1)*(N+1)+1:(i)*(N+1)) = u_mean((i-1)*(N+1)+1:(i)*(N+1)) + ((N+1)*Ex)*2.*psi_xy(1,:,(i-1)*Ex+1)';
     end
 end
 u_mean = u_mean/(2*Ex);
