@@ -189,38 +189,6 @@ for step=1:nstep
         
         b0i=1./b0;
     end % Viscous op
-
-% %   Nonlinear step - unassembled, not multiplied by mass matrix
-% 
-%     fx1 = -convl(u,RX,Dh,u,v) + F + terms_x; % du = Cu  
-%     fy1 = -convl(v,RX,Dh,u,v) + terms_y; % dv = Cv
-% 
-%     rx  = a(1)*fx1+a(2)*fx2+a(3)*fx3; % kth-order extrapolation
-%     ry  = a(1)*fy1+a(2)*fy2+a(3)*fy3;
-% 
-%     fx3=fx2; fx2=fx1; 
-%     fy3=fy2; fy2=fy1; 
-% 
-%     rx  = dt*rx - (b(1)*u+b(2)*u2+b(3)*u3); u3=u2; u2=u; % Add BDF terms
-%     ry  = dt*ry - (b(1)*v+b(2)*v2+b(3)*v3); v3=v2; v2=v; %     and
-% 
-%     ut  = b0i*rx; 
-%     vt  = b0i*ry; 
-% 
-% %   uL=ut; vL=vt;
-%     [uL,vL,pr]=pressure_project(ut,vt,Ai,Q,ML,RX,Dh); % Div-free velocity
-%     pr = (b0/dt)*pr;
-% 
-%     %   Set RHS.                 %Viscous update. %  Convert to local form.
-%     u=R*(Q'*reshape(ML.*uL,nL,1));
-%     u=UH_x\(LH_x\u);
-%     u=Q*(R'*u);
-%     u=reshape(u,N1,N1,E);
-%     
-%     v=R*(Q'*reshape(ML.*vL,nL,1));
-%     v=UH_y\(LH_y\v);
-%     v=Q*(R'*v);
-%     v=reshape(v,N1,N1,E);
     
     %% uv version
     
