@@ -54,22 +54,20 @@ for e = 1:E
     z_x = L_x/2*(z--1)+X_min;
     z_y = L_y/2*(z--1)+Y_min;
     
-    psi = fpsi(z_x,z_y');
+    psi{1} = fpsi{1}(z_x,z_y');
+    psi{2} = fpsi{2}(z_x,z_y');
     gpsi{1} = fgpsi{1}(z_x,z_y');
     gpsi{2} = fgpsi{2}(z_x,z_y');
+    gpsi{3} = fgpsi{3}(z_x,z_y');
+    gpsi{4} = fgpsi{4}(z_x,z_y');
     hpsi{1} = fhpsi{1}(z_x,z_y');
     hpsi{2} = fhpsi{2}(z_x,z_y');
+    hpsi{3} = fhpsi{3}(z_x,z_y');
+    hpsi{4} = fhpsi{4}(z_x,z_y');
     
-    
-%     X=Xe(:,:,e); Y=Ye(:,:,e); 
-%     Xr  = Dh*X; Xs = X*Dh';
-%     Yr  = Dh*Y; Ys = Y*Dh';
     Jac = L_x*L_y*ones(size(w2d));
-%     Jac = Xr.*Ys - Xs.*Yr;
-%     rx  =  Ys./Jac; ry  = -Xs./Jac;
-%     sx  = -Yr./Jac; sy  =  Xr./Jac;
     
-    for k = 1:2
+    for k = 1:4
         for i = 1:nb
             for j = 1:nb
                 Mp{k}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*phi2d(:,:,j).*gpsi{k},'All');
@@ -79,15 +77,18 @@ for e = 1:E
 
     for i = 1:nb
         for j = 1:nb
-            Sp{1}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dxphi2d(:,:,j).*psi,'All');
-            Sp{2}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dyphi2d(:,:,j).*psi,'All');
+            Sp{1}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dxphi2d(:,:,j).*psi{1},'All');
+            Sp{2}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dyphi2d(:,:,j).*psi{1},'All');
+            Sp{3}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dxphi2d(:,:,j).*psi{2},'All');
+            Sp{4}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dyphi2d(:,:,j).*psi{2},'All');
         end
     end
     
     for k = 1:2
         for j = 1:nb
-            T1{k}(j,e) = hpsi{k}(j);%sum(Jac.*w2d.*phi2d(:,:,j).*hpsi{k},'All');
-            T2{k}(j,e) = 0;
+            %sum(Jac.*w2d.*phi2d(:,:,j).*hpsi{k},'All');
+            T1{k}(j,e) = hpsi{2*(k-1)+1}(j)+hpsi{2*(k-1)+2}(j);
+            T2{k}(j,e) = psi{1}(j)*gpsi{2*(k-1)+1}(j)+psi{2}(j)*gpsi{2*(k-1)+2}(j);
         end
     end
     

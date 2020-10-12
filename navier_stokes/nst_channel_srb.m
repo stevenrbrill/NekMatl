@@ -21,9 +21,11 @@ f_ic = @(x,y) u_ic*(1-y.^2);
 % Enrichment information
 en_on = 1;
 N_en_y = 3;
-psi = @(x,y) 0.5*(1 - y.^2) + 0.*x;
-gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) -1.*y + 0.*x};
-hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) -1 - 0.*y + 0.*x};
+psi = {@(x,y) 0.5*(1 - y.^2) + 0.*x, @(x,y) 0.*y + 0.*x};
+gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) -1.*y + 0.*x, ...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) -1 - 0.*y + 0.*x, ...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 % 
 % psi = @(x,y) sin((y+1)/2*pi) + 0.*x;
 % gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) 1/(2*pi)*cos((y+1)/2*pi) + 0.*x};
@@ -82,7 +84,8 @@ ML_uv(N+2:2*(N+1),N+2:2*(N+1),1:E) = ML;
 
 
 % Assemble enrichment matrices
-psi_xy = psi(X,Y);
+psi_xy{1} = psi{1}(X,Y);
+psi_xy{2} = psi{2}(X,Y);
 if en_on
     disp("Computing enrichment")
     [Mp,Sp,T1,T2,z_en,w_en] = enrich_mats(X,Y,E,N,psi,gpsi,hpsi);
@@ -159,7 +162,8 @@ for e = 1:E
             u(i,j,e) = f_ic(X(i,j,e),Y(i,j,e))+pert*rand()*u_ic;
             v(i,j,e) = v(i,j,e)+pert*rand()*u_ic;
             if en_on
-                 u(i,j,e) = u(i,j,e) - psi(X(i,j,e),Y(i,j,e));
+                 u(i,j,e) = u(i,j,e) - psi{1}(X(i,j,e),Y(i,j,e));
+                 v(i,j,e) = v(i,j,e) - psi{2}(X(i,j,e),Y(i,j,e));
             end
         end
     end
@@ -192,8 +196,8 @@ for step=1:nstep
             H_y=(Ma + A*dt/(b0*Re));
             [LH_x,UH_x]=lu(H_x);
             [LH_y,UH_y]=lu(H_y);
-            terms_x = 1/Re*(T1_rs{1}+T1_rs{2})+T2_rs{1};
-            terms_y = 0;%1/Re*(-T1_rs{2})-T2_rs{2};
+            terms_x = 1/Re*(T1_rs{1})+T2_rs{1};
+            terms_y = 1/Re*(T1_rs{2})+T2_rs{2};
             
             H_uv = (Ma_uv + A_uv*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
             [LH_uv,UH_uv]=lu(H_uv);

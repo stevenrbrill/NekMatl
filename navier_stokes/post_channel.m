@@ -11,7 +11,7 @@ end
 if en_on
     for i = 1:Ey
         if ((i <= N_en_y) || (i > Ex-N_en_y))
-            u_mean((i-1)*(N+1)+1:(i)*(N+1)) = u_mean((i-1)*(N+1)+1:(i)*(N+1)) + (Ex*2)*psi_xy(1,:,(i-1)*Ex+1)';
+            u_mean((i-1)*(N+1)+1:(i)*(N+1)) = u_mean((i-1)*(N+1)+1:(i)*(N+1)) + (Ex*2)*psi_xy{1}(1,:,(i-1)*Ex+1)';
         end
     end
 end
@@ -23,7 +23,7 @@ if en_on
         for ix = 1:Ex
             if ((iy <= N_en_y) || (iy > Ey-N_en_y))
                 i = (iy-1)*Ex+ix;
-                u_recon(:,:,i) = u(:,:,i) + psi_xy(:,:,i);
+                u_recon(:,:,i) = u(:,:,i) + psi_xy{1}(:,:,i);
             end
         end
     end
