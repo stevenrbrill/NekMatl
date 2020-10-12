@@ -6,22 +6,16 @@ function[Mp,Sp,T1,T2,z,w] =  enrich_mats(Xe,Ye,E,N,fpsi,fgpsi,fhpsi)
 %     of degree N
 %
 
-[Ah,Bh,Ch,Dh,z,w] =  semhat(N);
+[Ah,Bh,Ch,Dh,zb,wb] = semhat(N);
 [z,w] = zwgll(N);
-basis = get_nodal_basis_coeffs(z);
-phi = zeros(N+1,length(z));
-phi_p = zeros(N+1,length(z));
+nq = length(z);
+basis = get_nodal_basis_coeffs(zb);
+phi = zeros(nq,N+1);
+phi_p = zeros(nq,N+1);
 nb = (N+1)*(N+1);
-phi2d = zeros(length(z),length(z),nb);
-dxphi2d = zeros(length(z),length(z),nb);
-dyphi2d = zeros(length(z),length(z),nb);
-w2d = w*w';
-
-psi = fpsi(z,z');
-gpsi{1} = fgpsi{1}(z',z);
-gpsi{2} = fgpsi{2}(z',z);
-hpsi{1} = fhpsi{1}(z',z);
-hpsi{2} = fhpsi{2}(z',z);
+phi2d = zeros(nq,nq,nb);
+dxphi2d = zeros(nq,nq,nb);
+dyphi2d = zeros(nq,nq,nb);
 
 % Compute basis at quad points
 for i = 1:N+1
@@ -49,12 +43,31 @@ T2{1} = zeros(nb,E);
 T2{2} = zeros(nb,E);
 
 for e = 1:E
+    X_min = min(min(Xe(:,:,e)));
+    X_max = max(max(Xe(:,:,e)));
+    Y_min = min(min(Ye(:,:,e)));
+    Y_max = max(max(Ye(:,:,e)));
+    L_x = X_max-X_min;
+    L_y = Y_max-Y_min;
+    w2d = w*w';
+    
+    z_x = L_x/2*(z--1)+X_min;
+    z_y = L_y/2*(z--1)+Y_min;
+    
+    psi = fpsi(z_x,z_y');
+    gpsi{1} = fgpsi{1}(z_x,z_y');
+    gpsi{2} = fgpsi{2}(z_x,z_y');
+    hpsi{1} = fhpsi{1}(z_x,z_y');
+    hpsi{2} = fhpsi{2}(z_x,z_y');
+    
+    
     X=Xe(:,:,e); Y=Ye(:,:,e); 
-    Xr  = Dh*X; Xs = X*Dh';
-    Yr  = Dh*Y; Ys = Y*Dh';
-    Jac = Xr.*Ys - Xs.*Yr;
-    rx  =  Ys./Jac; ry  = -Xs./Jac;
-    sx  = -Yr./Jac; sy  =  Xr./Jac;
+%     Xr  = Dh*X; Xs = X*Dh';
+%     Yr  = Dh*Y; Ys = Y*Dh';
+    Jac = L_x*L_y*ones(size(w2d));
+%     Jac = Xr.*Ys - Xs.*Yr;
+%     rx  =  Ys./Jac; ry  = -Xs./Jac;
+%     sx  = -Yr./Jac; sy  =  Xr./Jac;
     
     for k = 1:2
         for i = 1:nb
