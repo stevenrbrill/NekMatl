@@ -86,7 +86,7 @@ for e = 1:E
     
     for k = 1:2
         for j = 1:nb
-            T1{k}(j,e) = sum(Jac.*w2d.*phi2d(:,:,j).*hpsi{k},'All');
+            T1{k}(j,e) = hpsi{k}(j);%sum(Jac.*w2d.*phi2d(:,:,j).*hpsi{k},'All');
             T2{k}(j,e) = 0;
         end
     end

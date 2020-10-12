@@ -10,13 +10,13 @@ format short;
 Re = 1; Pr=0.8; Pe=Re*Pr; 
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=3; % polynomial order  
+N=6; % polynomial order  
 Ex=1; % Number of elements in x
 Ey=1; % Number of elements in y
 CFL=0.1;
 u_ic = Re;
 pert = 0.0;
-f_ic = @(x,y) 0*u_ic*(1-y.^2);
+f_ic = @(x,y) u_ic*(1-y.^2);
 
 % Enrichment information
 en_on = 1;
@@ -159,7 +159,7 @@ for e = 1:E
             u(i,j,e) = f_ic(X(i,j,e),Y(i,j,e))+pert*rand()*u_ic;
             v(i,j,e) = v(i,j,e)+pert*rand()*u_ic;
             if en_on
-%                 u(i,j,e) = u(i,j,e) - psi(X(i,j,e),Y(i,j,e));
+                 u(i,j,e) = u(i,j,e) - psi(X(i,j,e),Y(i,j,e));
             end
         end
     end
@@ -192,8 +192,8 @@ for step=1:nstep
             H_y=(Ma + A*dt/(b0*Re));
             [LH_x,UH_x]=lu(H_x);
             [LH_y,UH_y]=lu(H_y);
-            terms_x = 1/Re*(-T1_rs{1})-T2_rs{1};
-            terms_y = 1/Re*(-T1_rs{2})-T2_rs{2};
+            terms_x = 1/Re*(T1_rs{1}+T1_rs{2})+T2_rs{1};
+            terms_y = 0;%1/Re*(-T1_rs{2})-T2_rs{2};
             
             H_uv = (Ma_uv + A_uv*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
             [LH_uv,UH_uv]=lu(H_uv);
