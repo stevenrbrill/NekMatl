@@ -21,7 +21,7 @@ u_recon = u;
 if en_on
     for iy = 1:Ey
         for ix = 1:Ex
-            if ((iy <= N_en_y) || (iy > Ex-N_en_y))
+            if ((iy <= N_en_y) || (iy > Ey-N_en_y))
                 i = (iy-1)*Ex+ix;
                 u_recon(:,:,i) = u(:,:,i) + psi_xy(:,:,i);
             end
