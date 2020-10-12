@@ -6,9 +6,9 @@ format compact; format longe; clear all
 Ra=120000; Pr=0.8; Re=sqrt(Ra); Pe=Re*Pr; 
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=10;E=5; N1=N+1; nL=N1*N1*E; % 10th order 
+N=4;E=5; N1=N+1; nL=N1*N1*E; % 10th order 
 
-Q=makeq(E,N);
+Q=makeq(E,1,N);
 R=maker(Q,E,N);
 [X,Y]=make_geom(E,N);      % Geometry in local form
 [G,J,ML,RX]=make_coef(X,Y);
