@@ -7,7 +7,7 @@ function[Mp,Sp,T1,T2,z,w] =  enrich_mats(Xe,Ye,E,N,fpsi,fgpsi,fhpsi)
 %
 
 [Ah,Bh,Ch,Dh,zb,wb] = semhat(N);
-[z,w] = zwgll(N);
+[z,w] = zwgll(4*N);
 nq = length(z);
 basis = get_nodal_basis_coeffs(zb);
 phi = zeros(nq,N+1);
@@ -61,7 +61,7 @@ for e = 1:E
     hpsi{2} = fhpsi{2}(z_x,z_y');
     
     
-    X=Xe(:,:,e); Y=Ye(:,:,e); 
+%     X=Xe(:,:,e); Y=Ye(:,:,e); 
 %     Xr  = Dh*X; Xs = X*Dh';
 %     Yr  = Dh*Y; Ys = Y*Dh';
     Jac = L_x*L_y*ones(size(w2d));
@@ -72,21 +72,21 @@ for e = 1:E
     for k = 1:2
         for i = 1:nb
             for j = 1:nb
-                Mp{k}(i,j,e) = sum(Jac*w2d.*phi2d(:,:,i).*phi2d(:,:,j).*gpsi{k},'All');
+                Mp{k}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*phi2d(:,:,j).*gpsi{k},'All');
             end
         end
     end
-    
+
     for i = 1:nb
         for j = 1:nb
-            Sp{1}(i,j,e) = sum(Jac*w2d.*phi2d(:,:,i).*dxphi2d(:,:,j).*psi,'All');
-            Sp{2}(i,j,e) = sum(Jac*w2d.*phi2d(:,:,i).*dyphi2d(:,:,j).*psi,'All');
+            Sp{1}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dxphi2d(:,:,j).*psi,'All');
+            Sp{2}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dyphi2d(:,:,j).*psi,'All');
         end
     end
     
     for k = 1:2
         for j = 1:nb
-            T1{k}(j,e) = sum(Jac*w2d.*phi2d(:,:,j).*hpsi{k},'All');
+            T1{k}(j,e) = sum(Jac.*w2d.*phi2d(:,:,j).*hpsi{k},'All');
             T2{k}(j,e) = 0;
         end
     end
