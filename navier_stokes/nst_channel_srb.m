@@ -1,5 +1,5 @@
 % clc
-% clear
+clear all
 close all
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Navier-Stokes Solver Demo (2D Channel)
@@ -10,9 +10,9 @@ format short;
 Re = 1; Pr=0.8; Pe=Re*Pr; 
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=4; % polynomial order  
-Ex=3; % Number of elements in x
-Ey=3; % Number of elements in y
+N=3; % polynomial order  
+Ex=1; % Number of elements in x
+Ey=1; % Number of elements in y
 CFL=0.1;
 u_ic = Re;
 pert = 0.0;
@@ -20,10 +20,18 @@ f_ic = @(x,y) 0*u_ic*(1-y.^2);
 
 % Enrichment information
 en_on = 1;
-N_en_y = 2;
+N_en_y = 3;
 psi = @(x,y) 0.5*(1 - y.^2) + 0.*x;
 gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) -1.*y + 0.*x};
 hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) -1 - 0.*y + 0.*x};
+% 
+% psi = @(x,y) sin((y+1)/2*pi) + 0.*x;
+% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) 1/(2*pi)*cos((y+1)/2*pi) + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) -1/(2*pi)*1/(2*pi)*sin((y+1)/2*pi) + 0.*x};
+
+% psi = @(x,y) 1+0.*y + 0.*x;
+% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) - 0.*y + 0.*x};
 
 %% Begin Solve
 E=Ex*Ey; % Total number of elements
@@ -95,8 +103,8 @@ if en_on
                     Sp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Sp{k}(:,:,i);
 %                     T1_all{k}((i-1)*nb+1:i*nb) = T1{k}(:,i);
 %                     T2_all{k}((i-1)*nb+1:i*nb) = T2{k}(:,i);
-                    T1{k}(:,i) = 0.*T1{k}(:,i);
-                    T2{k}(:,i) = 0.*T2{k}(:,i);
+                    T1{k}(:,i) = T1{k}(:,i);
+                    T2{k}(:,i) = T2{k}(:,i);
                 end
             end
         end
@@ -150,6 +158,9 @@ for e = 1:E
         for j = 1:N+1
             u(i,j,e) = f_ic(X(i,j,e),Y(i,j,e))+pert*rand()*u_ic;
             v(i,j,e) = v(i,j,e)+pert*rand()*u_ic;
+            if en_on
+%                 u(i,j,e) = u(i,j,e) - psi(X(i,j,e),Y(i,j,e));
+            end
         end
     end
 end
@@ -181,8 +192,8 @@ for step=1:nstep
             H_y=(Ma + A*dt/(b0*Re));
             [LH_x,UH_x]=lu(H_x);
             [LH_y,UH_y]=lu(H_y);
-            terms_x = 1/Re*-T1_rs{1}-T2_rs{1};
-            terms_y = 1/Re*-T1_rs{2}-T2_rs{2};
+            terms_x = 1/Re*(-T1_rs{1})-T2_rs{1};
+            terms_y = 1/Re*(-T1_rs{2})-T2_rs{2};
             
             H_uv = (Ma_uv + A_uv*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
             [LH_uv,UH_uv]=lu(H_uv);
@@ -240,7 +251,7 @@ for step=1:nstep
     
     
 %% Output
-    if mod(step,100)==0
+    if mod(step,1)==0
         plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
     end
 
