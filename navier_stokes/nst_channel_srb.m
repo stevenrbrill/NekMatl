@@ -10,30 +10,86 @@ format short;
 Re = 1; Pr=0.8; Pe=Re*Pr; 
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=6; % polynomial order  
+N=2; % polynomial order  
 Ex=1; % Number of elements in x
-Ey=1; % Number of elements in y
-CFL=0.1;
+Ey=3; % Number of elements in y
+CFL=0.01;
 u_ic = Re;
 pert = 0.0;
 f_ic = @(x,y) u_ic*(1-y.^2);
 
-% Enrichment information
+%% Enrichment information
 en_on = 1;
-N_en_y = 3;
-psi = {@(x,y) 0.5*(1 - y.^2) + 0.*x, @(x,y) 0.*y + 0.*x};
-gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) -1.*y + 0.*x, ...
+N_en_y = 1; 
+psi = {@(x,y) (0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
+gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-1.*y + 0.*x), ...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) -1 - 0.*y + 0.*x, ...
+hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-1 - 0.*y + 0.*x), ...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-% 
-% psi = @(x,y) sin((y+1)/2*pi) + 0.*x;
-% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) 1/(2*pi)*cos((y+1)/2*pi) + 0.*x};
-% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) -1/(2*pi)*1/(2*pi)*sin((y+1)/2*pi) + 0.*x};
+    
+% No enrichment on one half
+% psi = {@(x,y) (y<=0).*(0.5*(1 - y.^2)) + (y>0).*0.5 + 0.*x, @(x,y) 0.*y + 0.*x};
+% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (y<=0).*(-1.*y)+ (y>0).*0 + 0.*x, ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (y<=0).*(-1.)+ (y>0).*0 + 0.*y + 0.*x, ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 
-% psi = @(x,y) 1+0.*y + 0.*x;
-% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) - 0.*y + 0.*x};
+% Blended enrichment
+% En - Blend - normal .. - Blend - En
+% N_en_form = 1;
+% Ly = 2/Ey;
+% ye = 1-Ly*N_en_form; % end of enrichment
+% yb = 1-Ly*(N_en_form+1); % end of blending
+% blend = @(x,y) 0.*x + ...
+%     (abs(y) >= ye).*1 + ...
+%     ((-ye < y).*(y <= -yb)).*(y-(-yb))/((-ye)-(-yb)) + ...
+%     + y.*0 + ...
+%     ((ye > y).*(y >= yb)).*(y-(yb))/((ye)-(yb));
+% 
+% dblend = @(x,y) 0.*x + ...
+%     (abs(y) >= ye).*0 + ...
+%     ((-ye < y).*(y <= -yb)).*1./((-ye)-(-yb)) + ...
+%     + y.*0 + ...
+%     ((ye > y).*(y >= yb)).*1./((ye)-(yb));
+% 
+% hblend = @(x,y) 0.*x + ...
+%     (abs(y) >= ye).*0 + ...
+%     ((-ye < y).*(y <= -yb)).*0 + ...
+%     + y.*0 + ...
+%     ((ye > y).*(y >= yb)).*0;
+% 
+% en = @(x,y)(0.5*(1 - y.^2)) + 0.*x;
+% den = @(x,y) (-1.*y + 0.*x);
+% hen = @(x,y) (-1 - 0.*y + 0.*x);
+% 
+% psi = {@(x,y) blend(x,y).*en(x,y), @(x,y) 0.*y + 0.*x};
+% gpsi = {@(x,y) 0.*y + 0.*x, ...
+%         @(x,y) blend(x,y).*den(x,y) + dblend(x,y).*en(x,y), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x, ...
+%         @(x,y) blend(x,y).*hen(x,y) + 2*dblend(x,y).*den(x,y) + hblend(x,y).*en(x,y), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+
+% Flat enrichment in middle
+% en_loc = 2/Ey+0.0001;
+% psi = {@(x,y) ((1-abs(y))<=en_loc).*(0.5*(1 - y.^2) + 0.*x)+((1-abs(y))>en_loc).*0.5*(1-(1-2/Ey)^2), @(x,y) 0.*y + 0.*x};
+% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) ((1-abs(y))<=en_loc).*(-1.*y + 0.*x), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) ((1-abs(y))<=en_loc).*(-1 - 0.*y + 0.*x), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+
+% % 0 enrichment in middle
+% en_loc = 2/Ey+0.000000001;
+% psi = {@(x,y) ((1-abs(y))<=en_loc).*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
+% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) ((1-abs(y))<=en_loc).*(-1.*y + 0.*x), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) ((1-abs(y))<=en_loc).*(-1 - 0.*y + 0.*x), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+
+% 0 enrichment
+% psi = {@(x,y) 0+0.*y + 0.*x, @(x,y) 0+0.*y + 0.*x;};
+% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 
 %% Begin Solve
 E=Ex*Ey; % Total number of elements
