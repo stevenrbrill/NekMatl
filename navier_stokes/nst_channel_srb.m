@@ -83,7 +83,7 @@ ML_uv(1:N+1,1:N+1,1:E) = ML;
 ML_uv(N+2:2*(N+1),N+2:2*(N+1),1:E) = ML;
 
 
-% Assemble enrichment matrices
+%% Assemble enrichment matrices
 psi_xy{1} = psi{1}(X,Y);
 psi_xy{2} = psi{2}(X,Y);
 if en_on
@@ -94,20 +94,27 @@ if en_on
     for k=1:2
         Mp_all{k} = zeros(nb*E,nb*E);
         Sp_all{k} = zeros(nb*E,nb*E);
-        T1_all{k} = zeros(nb*E,1);
-        T2_all{k} = zeros(nb*E,1);
+%         T1_all{k} = zeros(nb*E,1);
+%         T2_all{k} = zeros(nb*E,1);
+        T1_all{k} = zeros(N+1,N+1,E);
+        T2_all{k} = zeros(N+1,N+1,E);
+        
+        T1_rs{k} = reshape(T1{k},[N+1,N+1,E]);
+        T2_rs{k} = reshape(T2{k},[N+1,N+1,E]);
         
         % TODO: Assemble differently for different elements
         for iy = 1:Ey
             for ix = 1:Ex
-                if ((iy <= N_en_y) || (iy > Ex-N_en_y))
-                    i = (iy-1)*Ex+ix;
+                i = (iy-1)*Ex+ix;
+                if ((iy <= N_en_y) || (iy > Ey-N_en_y))
                     Mp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Mp{k}(:,:,i);
                     Sp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Sp{k}(:,:,i);
 %                     T1_all{k}((i-1)*nb+1:i*nb) = T1{k}(:,i);
 %                     T2_all{k}((i-1)*nb+1:i*nb) = T2{k}(:,i);
-                    T1{k}(:,i) = T1{k}(:,i);
-                    T2{k}(:,i) = T2{k}(:,i);
+%                     T1{k}(:,i) = T1{k}(:,i);
+%                     T2{k}(:,i) = T2{k}(:,i);
+                    T1_all{k}(:,:,i) = T1_rs{k}(:,:,i); 
+                    T2_all{k}(:,:,i) = T2_rs{k}(:,:,i);
                 end
             end
         end
@@ -117,11 +124,9 @@ if en_on
         Sp_all{k} = R*Q'*Sp_all{k}*Q*R';
         
 %         T1_all{k} = sparse(T1_all{k});
-        
-        T1_rs{k} = reshape(T1{k},[N+1,N+1,E]);
 %         T2_all{k} = sparse(T2_all{k});
 %         T2_all{k} = Q'*T2_all{k};
-        T2_rs{k} = reshape(T2{k},[N+1,N+1,E]);
+   
     end
     
     Mp_uv = zeros(2*nn);
@@ -135,8 +140,7 @@ if en_on
     Sp_uv = sparse(Sp_uv);   
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+%%
 
 dxmin=pi*(z(N1)-z(N))/(2*Ex); % Get min dx for CFL constraint
 Tfinal=150; 
@@ -162,8 +166,10 @@ for e = 1:E
             u(i,j,e) = f_ic(X(i,j,e),Y(i,j,e))+pert*rand()*u_ic;
             v(i,j,e) = v(i,j,e)+pert*rand()*u_ic;
             if en_on
-                 u(i,j,e) = u(i,j,e) - psi{1}(X(i,j,e),Y(i,j,e));
-                 v(i,j,e) = v(i,j,e) - psi{2}(X(i,j,e),Y(i,j,e));
+                if ((e <= Ex*N_en_y) || (e > (Ey-N_en_y)*Ex))
+                    u(i,j,e) = u(i,j,e) - psi{1}(X(i,j,e),Y(i,j,e));
+                    v(i,j,e) = v(i,j,e) - psi{2}(X(i,j,e),Y(i,j,e));
+                end
             end
         end
     end
@@ -184,7 +190,7 @@ disp("Timestepping")
 plot1 = 1;
 time = 0;
 plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
 for step=1:nstep 
     time=step*dt;
     if step==1; b0=1.0;    b= [ -1 0 0 ]';       a=[ 1  0 0 ]'; end
@@ -196,8 +202,8 @@ for step=1:nstep
             H_y=(Ma + A*dt/(b0*Re));
             [LH_x,UH_x]=lu(H_x);
             [LH_y,UH_y]=lu(H_y);
-            terms_x = 1/Re*(T1_rs{1})+T2_rs{1};
-            terms_y = 1/Re*(T1_rs{2})+T2_rs{2};
+            terms_x = 1/Re*(T1_all{1})+T2_all{1};
+            terms_y = 1/Re*(T1_all{2})+T2_all{2};
             
             H_uv = (Ma_uv + A_uv*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
             [LH_uv,UH_uv]=lu(H_uv);
@@ -255,7 +261,7 @@ for step=1:nstep
     
     
 %% Output
-    if mod(step,1)==0
+    if mod(step,100)==0
         plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
     end
 

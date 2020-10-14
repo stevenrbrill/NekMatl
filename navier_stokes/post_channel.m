@@ -10,7 +10,7 @@ for i = 1:Ey
 end
 if en_on
     for i = 1:Ey
-        if ((i <= N_en_y) || (i > Ex-N_en_y))
+        if ((i <= N_en_y) || (i > Ey-N_en_y))
             u_mean((i-1)*(N+1)+1:(i)*(N+1)) = u_mean((i-1)*(N+1)+1:(i)*(N+1)) + (Ex*2)*psi_xy{1}(1,:,(i-1)*Ex+1)';
         end
     end
@@ -44,6 +44,8 @@ else
 end
 for i = 1:Ey
     plot(u_mean,Ys,'b-o')
+    set(gca, 'YGrid', 'on', 'XGrid', 'off')
+    yticks(linspace(-1,1,Ey+1));
     hold on
 end
 hold off
