@@ -65,6 +65,20 @@ for e = 1:E
     hpsi{3} = fhpsi{3}(z_x,z_y');
     hpsi{4} = fhpsi{4}(z_x,z_y');
     
+    zb_x = L_x/2*(zb--1)+X_min;
+    zb_y = L_y/2*(zb--1)+Y_min;
+    
+    psib{1} = fpsi{1}(zb_x,zb_y');
+    psib{2} = fpsi{2}(zb_x,zb_y');
+    gpsib{1} = fgpsi{1}(zb_x,zb_y');
+    gpsib{2} = fgpsi{2}(zb_x,zb_y');
+    gpsib{3} = fgpsi{3}(zb_x,zb_y');
+    gpsib{4} = fgpsi{4}(zb_x,zb_y');
+    hpsib{1} = fhpsi{1}(zb_x,zb_y');
+    hpsib{2} = fhpsi{2}(zb_x,zb_y');
+    hpsib{3} = fhpsi{3}(zb_x,zb_y');
+    hpsib{4} = fhpsi{4}(zb_x,zb_y');
+    
     Jac = L_x*L_y*ones(size(w2d));
     
     for k = 1:4
@@ -87,8 +101,8 @@ for e = 1:E
     for k = 1:2
         for j = 1:nb
             %sum(Jac.*w2d.*phi2d(:,:,j).*hpsi{k},'All');
-            T1{k}(j,e) = hpsi{2*(k-1)+1}(j)+hpsi{2*(k-1)+2}(j);
-            T2{k}(j,e) = psi{1}(j)*gpsi{2*(k-1)+1}(j)+psi{2}(j)*gpsi{2*(k-1)+2}(j);
+            T1{k}(j,e) = hpsib{2*(k-1)+1}(j)+hpsib{2*(k-1)+2}(j);
+            T2{k}(j,e) = psib{1}(j)*gpsib{2*(k-1)+1}(j)+psib{2}(j)*gpsib{2*(k-1)+2}(j);
         end
     end
     
