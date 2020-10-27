@@ -22,7 +22,7 @@ Re = 1; Pr=0.8; Pe=Re*Pr;
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
 N=2; % polynomial order  
 Ex=1; % Number of elements in x
-Ey=3; % Number of elements in y
+Ey=5; % Number of elements in y
 CFL=0.1;
 u_ic = Re;
 pert = 0.0;
@@ -30,12 +30,12 @@ f_ic = @(x,y) u_ic*(1-y.^2);
 
 %% Enrichment information
 en_on = 1;
-N_en_y = 1; 
-psi = {@(x,y) (0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
-gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-1.*y + 0.*x), ...
-        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-1 - 0.*y + 0.*x), ...
-        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+N_en_y = Ey; 
+% psi = {@(x,y) (0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
+% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-1.*y + 0.*x), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-1 - 0.*y + 0.*x), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
     
 % No enrichment on one half
 % psi = {@(x,y) (y<=0).*(0.5*(1 - y.^2)) + (y>0).*0.5 + 0.*x, @(x,y) 0.*y + 0.*x};
@@ -114,17 +114,22 @@ hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-1 - 0.*y + 0.*x), ...
 
 % % 0 enrichment in middle  
 % Middle is slightly below normal enrichment
-% en_loc = 2/Ey+0.000000001;
-% psi = {@(x,y) ((1-abs(y))<=en_loc).*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
-% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) ((1-abs(y))<=en_loc).*(-1.*y + 0.*x), ...
-%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) ((1-abs(y))<=en_loc).*(-1 - 0.*y + 0.*x), ...
-%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+en_loc = 2/Ey+0.000000001;
+psi = {@(x,y) ((1-abs(y))<=en_loc).*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
+gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) ((1-abs(y))<=en_loc).*(-1.*y + 0.*x), ...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) ((1-abs(y))<=en_loc).*(-1 - 0.*y + 0.*x), ...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 
 % 0 enrichment
 % psi = {@(x,y) 0+0.*y + 0.*x, @(x,y) 0+0.*y + 0.*x;};
 % gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 % hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+
+%% Plot psi
+figure
+ys_plot = linspace(-1,1,1000);
+plot(ys_plot,psi{1}(0,ys_plot))
 
 %% Begin Solve
 E=Ex*Ey; % Total number of elements
@@ -277,6 +282,12 @@ Fb=Bb\(Q'*Fb);
 
 uv = [u;v];
 
+%% Setup BC if nonzero
+u_bc = ones(size(u)).*((Y==1)+(Y==-1));
+u_bc = reshape(ML.*u_bc,nL,1);
+u_bc = Bb\(Q'*u_bc);
+
+%%
 disp("Timestepping")
 plot1 = 1;
 time = 0;
@@ -309,6 +320,7 @@ for step=1:nstep
             
             H_uv = (Ma_uv + A_uv*dt/(b0*Re));
             [LH_uv,UH_uv]=lu(H_uv);
+            Hbar=(Bb+ Ab*dt/(b0*Re));
         end
         
         b0i=1./b0;
@@ -338,12 +350,14 @@ for step=1:nstep
     pr = (b0/dt)*pr;
 
     %   Set RHS.                 %Viscous update. %  Convert to local form.
+%     u=R*(Q'*reshape(ML.*uL,nL,1)-Hbar*u_bc);
     u=R*(Q'*reshape(ML.*uL,nL,1));
     v=R*(Q'*reshape(ML.*vL,nL,1));
     uv = [u;v];
     uv=UH_uv\(LH_uv\uv);
     u = uv(1:nn);
     v = uv(nn+1:2*nn);
+%     u=Q*(R'*u+u_bc);
     u=Q*(R'*u);
     u=reshape(u,N1,N1,E);
     v=Q*(R'*v);
