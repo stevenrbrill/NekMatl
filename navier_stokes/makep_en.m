@@ -37,3 +37,5 @@ for i = 1:N
     P(y_orig*m_orig+(j-1)*(N+1)+i,y_aglo*m+(j-1)*N+i) = -1;
 end
 P((y_orig+1)*m_orig,y_aglo*m+1) = -1;
+
+P=sparse(P);
