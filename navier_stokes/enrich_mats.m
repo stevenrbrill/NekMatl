@@ -7,7 +7,7 @@ function[Mp,Sp,T1,T2,z,w] =  enrich_mats(Xe,Ye,E,N,fpsi,fgpsi,fhpsi)
 %
 
 [Ah,Bh,Ch,Dh,zb,wb] = semhat(N);
-[z,w] = zwgll(4*N);
+[z,w] = zwgll(N);
 nq = length(z);
 basis = get_nodal_basis_coeffs(zb);
 phi = zeros(nq,N+1);

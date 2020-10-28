@@ -20,22 +20,22 @@ format short;
 Re = 1; Pr=0.8; Pe=Re*Pr; 
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=2; % polynomial order  
-Ex=1; % Number of elements in x
-Ey=5; % Number of elements in y
+N=3; % polynomial order  
+Ex=2; % Number of elements in x
+Ey=3; % Number of elements in y
 CFL=0.1;
 u_ic = Re;
 pert = 0.0;
 f_ic = @(x,y) u_ic*(1-y.^2);
 
 %% Enrichment information
-en_on = 1;
-N_en_y = Ey; 
-% psi = {@(x,y) (0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
-% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-1.*y + 0.*x), ...
-%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-1 - 0.*y + 0.*x), ...
-%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+en_on = 0;
+N_en_y = 1; 
+psi = {@(x,y) (0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
+gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-1.*y + 0.*x), ...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-1 - 0.*y + 0.*x), ...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
     
 % No enrichment on one half
 % psi = {@(x,y) (y<=0).*(0.5*(1 - y.^2)) + (y>0).*0.5 + 0.*x, @(x,y) 0.*y + 0.*x};
@@ -114,12 +114,12 @@ N_en_y = Ey;
 
 % % 0 enrichment in middle  
 % Middle is slightly below normal enrichment
-en_loc = 2/Ey+0.000000001;
-psi = {@(x,y) ((1-abs(y))<=en_loc).*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
-gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) ((1-abs(y))<=en_loc).*(-1.*y + 0.*x), ...
-        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) ((1-abs(y))<=en_loc).*(-1 - 0.*y + 0.*x), ...
-        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% en_loc = 2/Ey+0.000000001;
+% psi = {@(x,y) ((1-abs(y))<=en_loc).*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
+% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) ((1-abs(y))<=en_loc).*(-1.*y + 0.*x), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) ((1-abs(y))<=en_loc).*(-1 - 0.*y + 0.*x), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 
 % 0 enrichment
 % psi = {@(x,y) 0+0.*y + 0.*x, @(x,y) 0+0.*y + 0.*x;};
@@ -133,10 +133,11 @@ plot(ys_plot,psi{1}(0,ys_plot))
 
 %% Begin Solve
 E=Ex*Ey; % Total number of elements
-N1=N+1; 
+N1=N+1;
 disp("Generating Matrices")
 Q=makeq(Ex,Ey,N); % Global continuity
 R=maker(Q,Ex,N); % Restriction matrix, applies Dirichlet conditions
+P=makep_en(Ex,Ey,N,N_en_y); % Global continuity
 [X,Y]=make_geom_channel(Ex,Ey,N);      % Geometry in local form
 
 
