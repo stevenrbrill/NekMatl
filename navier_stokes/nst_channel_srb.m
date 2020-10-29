@@ -20,13 +20,13 @@ format short;
 Re = 1; Pr=0.8; Pe=Re*Pr; 
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=3; % polynomial order  
+N=4; % polynomial order  
 Ex=1; % Number of elements in x
-Ey=3; % Number of elements in y
+Ey=5; % Number of elements in y
 CFL=0.1;
 u_ic = Re;
 pert = 0.0;
-f_ic = @(x,y) u_ic*(1-y.^2);
+f_ic = @(x,y) u_ic*(1-y.^2)/2;
 
 %% Enrichment information
 en_on = 1;
@@ -135,10 +135,14 @@ plot(ys_plot,psi{1}(0,ys_plot))
 E=Ex*Ey; % Total number of elements
 N1=N+1;
 disp("Generating Matrices")
-Q=makeq(Ex,Ey,N); % Global continuity
+% if en_on
+%     Q=makeq_en(Ex,Ey,N,N_en_y);
+% else
+    Q=makeq(Ex,Ey,N); % Global continuity
+% end
 R=maker(Q,Ex,N); % Restriction matrix, applies Dirichlet conditions
 [X,Y]=make_geom_channel(Ex,Ey,N);      % Geometry in local form
-
+en_b_nodes = get_en_bound_nodes(Ex,Ey,N,N_en_y);
 
 Ys = zeros(Ey*length(Y(1,:,1)),1);
 for i = 1:Ey
@@ -151,17 +155,20 @@ end
 [n,nb]=size(R); 
 nL=N1*N1*E;
 
-Ab=spalloc(nb,nb,nb*N);    %  Generate Abar
-for j=1:nb;
-    x=zeros(nb,1); 
+Ab=spalloc(nL,nL,nL*N);    %  Generate Abar
+for j=1:nL
+    x=zeros(nL,1); 
     x(j)=1; 
-    Ab(:,j)=abar(x,Dh,G,Q);  % assembled Neumann Operator
-end;
+    Ab(:,j)=abar_c(x,Dh,G,Q);  % assembled Neumann Operator
+end
+A_c=R*Q'*apply_en_cont(Ab,en_b_nodes);
+Ab = Q'*Ab*Q;
 A=R*Ab*R'; % Full stiffness matrix
 Bb=reshape(ML,nL,1); % Form Mass matrix
 Bb=diag(Bb); 
 Bb=sparse(Bb); 
 Ma=R*Q'*Bb*Q*R'; % Assembling mass matrix  % Full mass matrix
+M_c = R*Q'*apply_en_cont(Bb,en_b_nodes);
 
 % Assemble overall system matrices
 nn = length(Ma); % number of nodes in the domain
@@ -215,8 +222,10 @@ if en_on
             end
         end
         Mp_all{k} = sparse(Mp_all{k});
+        Mp_all_c{k} = R*Q'*apply_en_cont(Mp_all{k},en_b_nodes);
         Mp_all{k} = R*Q'*Mp_all{k}*Q*R';
         Sp_all{k} = sparse(Sp_all{k});
+        Sp_all_c{k} = R*Q'*apply_en_cont(Sp_all{k},en_b_nodes);
         Sp_all{k} = R*Q'*Sp_all{k}*Q*R';
         
 %         T1_all{k} = sparse(T1_all{k});
@@ -271,7 +280,7 @@ for e = 1:E
     end
 end
 
-
+% u = apply_en_cont_soln(u,en_b_nodes,psi_p);
 u1=u; u2=u; u3=u; fx3=u; fx2=u; fx1=u;
 v1=v; v2=v; v3=v; fy3=v; fy2=v; fy1=v;
 
@@ -308,6 +317,8 @@ for step=1:nstep
             terms_y = 1/Re*(T1_all{2})+T2_all{2};
             
             H_uv = (Ma_uv + A_uv*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
+            H_c = (M_c + A_c*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
+            rhs_c = -(H_c)*psi_p;
             [LH_uv,UH_uv]=lu(H_uv);
         else
             H=(Ma + A*dt/(b0*Re));
@@ -319,6 +330,7 @@ for step=1:nstep
             terms_y = zeros(N+1,N+1,E);
             
             H_uv = (Ma_uv + A_uv*dt/(b0*Re));
+            rhs_c = zeros(size(Ma_uv(:,1)));
             [LH_uv,UH_uv]=lu(H_uv);
 %             Hbar=(Bb+ Ab*dt/(b0*Re));
         end
@@ -353,12 +365,16 @@ for step=1:nstep
 %     u=R*(Q'*reshape(ML.*uL,nL,1)-Hbar*u_bc);
     u=R*(Q'*reshape(ML.*uL,nL,1));
     v=R*(Q'*reshape(ML.*vL,nL,1));
-    uv = [u;v];
+    uv = [u+rhs_c;v];
+%     uv = [u;v];
     uv=UH_uv\(LH_uv\uv);
     u = uv(1:nn);
     v = uv(nn+1:2*nn);
 %     u=Q*(R'*u+u_bc);
     u=Q*(R'*u);
+    if en_on
+        u = apply_en_cont_soln(u,en_b_nodes,psi_p);
+    end
     u=reshape(u,N1,N1,E);
     v=Q*(R'*v);
     v=reshape(v,N1,N1,E);
