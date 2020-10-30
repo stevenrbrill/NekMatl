@@ -141,6 +141,8 @@ figure
 ys_plot = linspace(-1,1,1000);
 plot(ys_plot,psi{1}(0,ys_plot))
 
+psi_p = psi{1}(0,N_en_y*2/Ey-1);
+
 %% Begin Solve
 E=Ex*Ey; % Total number of elements
 N1=N+1;
@@ -171,14 +173,14 @@ for j=1:nL
     x(j)=1; 
     Ab(:,j)=abar_c(x,Dh,G,Q);  % assembled Neumann Operator
 end
-A_c=R*Q'*apply_en_cont(Ab,en_b_nodes);
+A_c=R*Q'*apply_en_cont(Ab,en_b_nodes,psi_p);
 Ab = Q'*Ab*Q;
 A=R*Ab*R'; % Full stiffness matrix
 Bb=reshape(ML,nL,1); % Form Mass matrix
 Bb=diag(Bb); 
 Bb=sparse(Bb); 
 Ma=R*Q'*Bb*Q*R'; % Assembling mass matrix  % Full mass matrix
-M_c = R*Q'*apply_en_cont(Bb,en_b_nodes);
+M_c = R*Q'*apply_en_cont(Bb,en_b_nodes,psi_p);
 
 % Assemble overall system matrices
 nn = length(Ma); % number of nodes in the domain
@@ -198,7 +200,6 @@ ML_uv(N+2:2*(N+1),N+2:2*(N+1),1:E) = ML;
 %% Assemble enrichment matrices
 psi_xy{1} = psi{1}(X,Y);
 psi_xy{2} = psi{2}(X,Y);
-psi_p = psi{1}(0,N_en_y*2/Ey-1);
 if en_on
     disp("Computing enrichment")
     [Mp,Sp,T1,T2,z_en,w_en] = enrich_mats(X,Y,E,N,psi,gpsi,hpsi);
@@ -232,10 +233,10 @@ if en_on
             end
         end
         Mp_all{k} = sparse(Mp_all{k});
-        Mp_all_c{k} = R*Q'*apply_en_cont(Mp_all{k},en_b_nodes);
+        Mp_all_c{k} = R*Q'*apply_en_cont(Mp_all{k},en_b_nodes,psi_p);
         Mp_all{k} = R*Q'*Mp_all{k}*Q*R';
         Sp_all{k} = sparse(Sp_all{k});
-        Sp_all_c{k} = R*Q'*apply_en_cont(Sp_all{k},en_b_nodes);
+        Sp_all_c{k} = R*Q'*apply_en_cont(Sp_all{k},en_b_nodes,psi_p);
         Sp_all{k} = R*Q'*Sp_all{k}*Q*R';
         
 %         T1_all{k} = sparse(T1_all{k});
@@ -312,10 +313,10 @@ plot1 = 1;
 time = 0;
 plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
 %%
-psi_len = length(M_c);
-psi_c = zeros(psi_len,1);
-psi_c(1:psi_len/2) = -1*ones(psi_len/2,1)*psi_p;
-psi_c(psi_len/2+1:psi_len) = -1*ones(psi_len/2,1)*psi_p;
+% psi_len = length(M_c);
+% psi_c = zeros(psi_len,1);
+% psi_c(1:psi_len/2) = -1*ones(psi_len/2,1)*psi_p;
+% psi_c(psi_len/2+1:psi_len) = 1*ones(psi_len/2,1)*psi_p;
 for step=1:nstep 
     time=step*dt;
     if step==1; b0=1.0;    b= [ -1 0 0 ]';       a=[ 1  0 0 ]'; end
@@ -332,7 +333,7 @@ for step=1:nstep
             
             H_uv = (Ma_uv + A_uv*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
             H_c = (M_c + A_c*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
-            rhs_c = (H_c).*psi_c;
+            rhs_c = (H_c);
             [LH_uv,UH_uv]=lu(H_uv);
         else
             H=(Ma + A*dt/(b0*Re));
