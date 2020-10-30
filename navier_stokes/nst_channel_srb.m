@@ -302,6 +302,10 @@ plot1 = 1;
 time = 0;
 plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
 %%
+psi_len = length(M_c);
+psi_c = zeros(psi_len,1);
+psi_c(1:psi_len/2) = 1*ones(psi_len/2,1)*psi_p;
+psi_c(psi_len/2+1:psi_len) = 1*ones(psi_len/2,1)*psi_p;
 for step=1:nstep 
     time=step*dt;
     if step==1; b0=1.0;    b= [ -1 0 0 ]';       a=[ 1  0 0 ]'; end
@@ -318,7 +322,7 @@ for step=1:nstep
             
             H_uv = (Ma_uv + A_uv*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
             H_c = (M_c + A_c*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
-            rhs_c = -(H_c)*psi_p;
+            rhs_c = (H_c).*psi_c;
             [LH_uv,UH_uv]=lu(H_uv);
         else
             H=(Ma + A*dt/(b0*Re));
@@ -372,10 +376,10 @@ for step=1:nstep
     v = uv(nn+1:2*nn);
 %     u=Q*(R'*u+u_bc);
     u=Q*(R'*u);
-    if en_on
-        u = apply_en_cont_soln(u,en_b_nodes,psi_p);
-    end
     u=reshape(u,N1,N1,E);
+    if en_on
+        u = apply_en_cont_soln(Ex,Ey,N_en_y,u,psi_p);
+    end
     v=Q*(R'*v);
     v=reshape(v,N1,N1,E);
     
