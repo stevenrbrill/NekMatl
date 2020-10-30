@@ -20,9 +20,9 @@ format short;
 Re = 1; Pr=0.8; Pe=Re*Pr; 
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=4; % polynomial order  
+N=2; % polynomial order  
 Ex=1; % Number of elements in x
-Ey=5; % Number of elements in y
+Ey=3; % Number of elements in y
 CFL=0.1;
 u_ic = Re;
 pert = 0.0;
@@ -314,8 +314,8 @@ plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
 %%
 psi_len = length(M_c);
 psi_c = zeros(psi_len,1);
-psi_c(1:psi_len/2) = 1*ones(psi_len/2,1)*psi_p;
-psi_c(psi_len/2+1:psi_len) = 1*ones(psi_len/2,1)*psi_p;
+psi_c(1:psi_len/2) = -1*ones(psi_len/2,1)*psi_p;
+psi_c(psi_len/2+1:psi_len) = -1*ones(psi_len/2,1)*psi_p;
 for step=1:nstep 
     time=step*dt;
     if step==1; b0=1.0;    b= [ -1 0 0 ]';       a=[ 1  0 0 ]'; end
@@ -386,10 +386,10 @@ for step=1:nstep
     v = uv(nn+1:2*nn);
 %     u=Q*(R'*u+u_bc);
     u=Q*(R'*u);
-    u=reshape(u,N1,N1,E);
     if en_on
-        u = apply_en_cont_soln(Ex,Ey,N_en_y,u,psi_p);
+        u = apply_en_cont_soln(Ey,N_en_y,en_b_nodes,u,psi_p);
     end
+    u=reshape(u,N1,N1,E);
     v=Q*(R'*v);
     v=reshape(v,N1,N1,E);
     
