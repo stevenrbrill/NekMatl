@@ -152,9 +152,9 @@ E=Ex*Ey; % Total number of elements
 N1=N+1;
 disp("Generating Matrices")
 % if en_on
-%     Q=makeq_en(Ex,Ey,N,N_en_y);
+    Q=makeq_en(Ex,Ey,N,N_en_y);
 % else
-    Q=makeq(Ex,Ey,N); % Global continuity
+%     Q=makeq(Ex,Ey,N); % Global continuity
 % end
 R=maker(Q,Ex,N); % Restriction matrix, applies Dirichlet conditions
 [X,Y]=make_geom_channel(Ex,Ey,N);      % Geometry in local form
@@ -389,10 +389,29 @@ for step=1:nstep
             terms_y = 1/Re*(T1_all{2})+T2_all{2};
             
             H_uv = (Ma_uv + A_uv*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
-            H_c = (M_c + A_c*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
+            H_c = 0;% (M_c + A_c*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
             H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re) + dt/b0*(Mp_uv_check + Sp_uv_check));
             H_q_check = R*Q'*(apply_en_cont(H_check(1:nL,1:nL),en_b_nodes,psi_p)+apply_en_cont(H_check(1:nL,nL+1:2*nL),en_b_nodes,psi_p));
             H_q = full(H_uv);
+            %% hardcode manipulation
+            H_uv(1,:) = H_uv(1,:)+H_uv(2,:);
+            H_uv(4,:) = H_uv(3,:)+H_uv(4,:);
+            H_uv(2,:) = zeros(size(H_uv(2,:)));
+            H_uv(2,1) = -1;
+            H_uv(2,2) = 1;
+            H_uv(3,:) = zeros(size(H_uv(3,:)));
+            H_uv(3,3) = 1;
+            H_uv(3,4) = -1;
+            
+            H_uv(4+1,:) = H_uv(4+1,:)+H_uv(4+2,:);
+            H_uv(4+4,:) = H_uv(4+3,:)+H_uv(4+4,:);
+            H_uv(4+2,:) = zeros(size(H_uv(4+2,:)));
+            H_uv(4+2,4+1) = -1;
+            H_uv(4+2,4+2) = 1;
+            H_uv(4+3,:) = zeros(size(H_uv(4+3,:)));
+            H_uv(4+3,4+3) = 1;
+            H_uv(4+3,4+4) = -1;
+            %%
             rhs_c = (H_c);
             [LH_uv,UH_uv]=lu(H_uv);
         else
@@ -451,12 +470,24 @@ for step=1:nstep
     u_rhs=R*(Q'*reshape(ML.*uL,nL,1));
     v_rhs=R*(Q'*reshape(ML.*vL,nL,1));
     
+    %% hardcode manipulation
+    u_rhs(1) = u_rhs(1) + u_rhs(2);
+    u_rhs(2) = psi_p*en_on;
+    u_rhs(4) = u_rhs(4) + u_rhs(3);
+    u_rhs(3) = psi_p*en_on;
+    
+    v_rhs(1) = v_rhs(1) + v_rhs(2);
+    v_rhs(2) = 0;
+    v_rhs(4) = v_rhs(4) + v_rhs(3);
+    v_rhs(3) = 0;
+    %%
+    
         %%
     u_rhs_check = u_rhs;
     v_rhs_check = v_rhs;
     %%
     
-    uv = [u_rhs+rhs_c;v_rhs];
+    uv = [u_rhs;v_rhs];
     uv_check = uv;
 %     uv = [u;v];
     uv=UH_uv\(LH_uv\uv);
@@ -464,9 +495,9 @@ for step=1:nstep
     v = uv(nn+1:2*nn);
 %     u=Q*(R'*u+u_bc);
     u=Q*(R'*u);
-    if en_on
-        u = apply_en_cont_soln(Ey,N_en_y,en_b_nodes,u,psi_p);
-    end
+%     if en_on
+%         u = apply_en_cont_soln(Ey,N_en_y,en_b_nodes,u,psi_p);
+%     end
     u=reshape(u,N1,N1,E);
     v=Q*(R'*v);
     v=reshape(v,N1,N1,E);
