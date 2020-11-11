@@ -388,6 +388,9 @@ for step=1:nstep
             terms_x = 1/Re*(T1_all{1})+T2_all{1};
             terms_y = 1/Re*(T1_all{2})+T2_all{2};
             
+            %% GUESS?
+            terms_x(:,:,2) = [-1,-1;-1,-1];
+            
             H_uv = (Ma_uv + A_uv*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
             H_c = 0;% (M_c + A_c*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
             H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re) + dt/b0*(Mp_uv_check + Sp_uv_check));
