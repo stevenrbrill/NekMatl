@@ -20,7 +20,7 @@ format short;
 Re = 1; Pr=0.8; Pe=Re*Pr; 
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=2; % polynomial order  
+N=1; % polynomial order  
 Ex=1; % Number of elements in x
 Ey=3; % Number of elements in y
 CFL=0.1;
@@ -139,7 +139,11 @@ hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-1 - 0.*y + 0.*x), ...
 %% Plot psi
 figure
 ys_plot = linspace(-1,1,1000);
-plot(ys_plot,psi{1}(0,ys_plot))
+plot(psi{1}(0,ys_plot),ys_plot)
+xlabel('\psi')
+ylabel('y')
+set(gca, 'YGrid', 'on', 'XGrid', 'off')
+    yticks(linspace(-1,1,Ey+1));
 
 psi_p = psi{1}(0,N_en_y*2/Ey-1);
 
@@ -174,6 +178,7 @@ for j=1:nL
     Ab(:,j)=abar_c(x,Dh,G,Q);  % assembled Neumann Operator
 end
 A_c=R*Q'*apply_en_cont(Ab,en_b_nodes,psi_p);
+S_check=full(Ab);
 Ab = Q'*Ab*Q;
 A=R*Ab*R'; % Full stiffness matrix
 Bb=reshape(ML,nL,1); % Form Mass matrix
@@ -181,6 +186,24 @@ Bb=diag(Bb);
 Bb=sparse(Bb); 
 Ma=R*Q'*Bb*Q*R'; % Assembling mass matrix  % Full mass matrix
 M_c = R*Q'*apply_en_cont(Bb,en_b_nodes,psi_p);
+
+
+%%
+M_check=full(Bb);
+
+Ma_uv_check = zeros(2*nL);
+Ma_uv_check(1:nL,1:nL) = M_check;
+Ma_uv_check(nL+1:2*nL,nL+1:2*nL) = M_check;
+A_uv_check = zeros(2*nL);
+A_uv_check(1:nL,1:nL) = S_check;
+A_uv_check(nL+1:2*nL,nL+1:2*nL) = S_check;
+
+M_q = full(Ma);
+S_q = full(A);
+
+
+%%
+
 
 % Assemble overall system matrices
 nn = length(Ma); % number of nodes in the domain
@@ -232,7 +255,24 @@ if en_on
                 end
             end
         end
-        Mp_all{k} = sparse(Mp_all{k});
+        %%
+        if k == 1
+            Mp_check_1 = full(Mp_all{k});
+            Sp_check_1 = full(Sp_all{k});
+            T1_check_1 = full(T1_all{k});
+            T2_check_1 = full(T2_all{k});
+            Mp_check_2 = zeros(size(Mp_all{k}));
+            Sp_check_2 = zeros(size(Mp_all{k}));
+            T1_check_2 = zeros(size(Mp_all{k}));
+            T2_check_2 = zeros(size(Mp_all{k}));
+        elseif k == 2
+            Mp_check_2 = full(Mp_all{k});
+            Sp_check_2 = full(Sp_all{k});
+            T1_check_2 = full(T1_all{k});
+            T2_check_2 = full(T2_all{k});
+        end
+        %%
+        Mp_all{k} = sparse(Mp_all{k});        
         Mp_all_c{k} = R*Q'*apply_en_cont(Mp_all{k},en_b_nodes,psi_p);
         Mp_all{k} = R*Q'*Mp_all{k}*Q*R';
         Sp_all{k} = sparse(Sp_all{k});
@@ -251,6 +291,19 @@ if en_on
     Mp_uv(1:nn,nn+1:2*nn) = Mp_all{2};
     Sp_uv(1:nn,1:nn) = Sp_all{1};
     Sp_uv(nn+1:2*nn,nn+1:2*nn) = Sp_all{1};
+    
+    %%
+    Mp_uv_check = zeros(2*nL);
+    Mp_uv_check(1:nL,1:nL) = Mp_check_1;
+    Mp_uv_check(1:nL,nL+1:2*nL) = Mp_check_2;
+    Sp_uv_check(1:nL,1:nL) = Sp_check_1;
+    Sp_uv_check(nL+1:2*nL,nL+1:2*nL) = Sp_check_1;
+    Mp_q_1 = full(Mp_all{1});
+    Sp_q_1 = full(Sp_all{1});
+    
+    Mp_q_2 = full(Mp_all{2});
+    Sp_q_2 = full(Sp_all{2});
+    %%
 
     Mp_uv = sparse(Mp_uv);
     Sp_uv = sparse(Sp_uv);   
@@ -302,6 +355,10 @@ F = ones(size(ML));
 
 uv = [u;v];
 
+%%
+uv_ic_check = uv;
+%%
+
 %% Setup BC if nonzero
 % u_bc = ones(size(u)).*((Y==1)+(Y==-1));
 % u_bc = reshape(ML.*u_bc,nL,1);
@@ -333,6 +390,9 @@ for step=1:nstep
             
             H_uv = (Ma_uv + A_uv*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
             H_c = (M_c + A_c*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
+            H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re) + dt/b0*(Mp_uv_check + Sp_uv_check));
+            H_q_check = R*Q'*(apply_en_cont(H_check(1:nL,1:nL),en_b_nodes,psi_p)+apply_en_cont(H_check(1:nL,nL+1:2*nL),en_b_nodes,psi_p));
+            H_q = full(H_uv);
             rhs_c = (H_c);
             [LH_uv,UH_uv]=lu(H_uv);
         else
@@ -345,20 +405,25 @@ for step=1:nstep
             terms_y = zeros(N+1,N+1,E);
             
             H_uv = (Ma_uv + A_uv*dt/(b0*Re));
-            rhs_c = zeros(size(Ma_uv(:,1)));
+            rhs_c = zeros(size(Ma(:,1)));
             [LH_uv,UH_uv]=lu(H_uv);
 %             Hbar=(Bb+ Ab*dt/(b0*Re));
         end
         
         b0i=1./b0;
     end % Viscous op
-    
+ 
     %% uv version
     
 %   Nonlinear step - unassembled, not multiplied by mass matrix
 
     fx1 = -convl(u,RX,Dh,u,v) + F + terms_x; % du = Cu  
     fy1 = -convl(v,RX,Dh,u,v) + terms_y; % dv = Cv
+    
+    %%
+    convl_x_check = -convl(u,RX,Dh,u,v);
+    convl_y_check = -convl(v,RX,Dh,u,v);
+    %%
 
     rx  = a(1)*fx1+a(2)*fx2+a(3)*fx3; % kth-order extrapolation
     ry  = a(1)*fy1+a(2)*fy2+a(3)*fy3;
@@ -375,12 +440,24 @@ for step=1:nstep
 %   uL=ut; vL=vt;
     [uL,vL,pr]=pressure_project(ut,vt,Ai,Q,ML,RX,Dh); % Div-free velocity
     pr = (b0/dt)*pr;
+    
+    %%
+    uL_check = uL;
+    vL_check = vL;
+    %%
 
     %   Set RHS.                 %Viscous update. %  Convert to local form.
 %     u=R*(Q'*reshape(ML.*uL,nL,1)-Hbar*u_bc);
-    u=R*(Q'*reshape(ML.*uL,nL,1));
-    v=R*(Q'*reshape(ML.*vL,nL,1));
-    uv = [u+rhs_c;v];
+    u_rhs=R*(Q'*reshape(ML.*uL,nL,1));
+    v_rhs=R*(Q'*reshape(ML.*vL,nL,1));
+    
+        %%
+    u_rhs_check = u_rhs;
+    v_rhs_check = v_rhs;
+    %%
+    
+    uv = [u_rhs+rhs_c;v_rhs];
+    uv_check = uv;
 %     uv = [u;v];
     uv=UH_uv\(LH_uv\uv);
     u = uv(1:nn);
