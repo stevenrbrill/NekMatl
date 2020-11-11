@@ -20,7 +20,7 @@ format short;
 Re = 1; Pr=0.8; Pe=Re*Pr; 
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=1; % polynomial order  
+N=2; % polynomial order  
 Ex=1; % Number of elements in x
 Ey=3; % Number of elements in y
 CFL=0.1;
@@ -159,6 +159,7 @@ disp("Generating Matrices")
 R=maker(Q,Ex,N); % Restriction matrix, applies Dirichlet conditions
 [X,Y]=make_geom_channel(Ex,Ey,N);      % Geometry in local form
 en_b_nodes = get_en_bound_nodes(Ex,Ey,N,N_en_y);
+en_b_nodes2 = get_en_bound_nodes2(Ex,Ey,N,N_en_y);
 
 Ys = zeros(Ey*length(Y(1,:,1)),1);
 for i = 1:Ey
@@ -389,7 +390,8 @@ for step=1:nstep
             terms_y = 1/Re*(T1_all{2})+T2_all{2};
             
             %% GUESS?
-            terms_x(:,:,2) = [-1,-1;-1,-1];
+%             terms_x(:,1,N_en_y+1) = terms_x(:,end,N_en_y);
+%             terms_x(:,end,Ey-N_en_y) = terms_x(:,1,Ey-N_en_y+1);
             
             H_uv = (Ma_uv + A_uv*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
             H_c = 0;% (M_c + A_c*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
@@ -397,23 +399,18 @@ for step=1:nstep
             H_q_check = R*Q'*(apply_en_cont(H_check(1:nL,1:nL),en_b_nodes,psi_p)+apply_en_cont(H_check(1:nL,nL+1:2*nL),en_b_nodes,psi_p));
             H_q = full(H_uv);
             %% hardcode manipulation
-            H_uv(1,:) = H_uv(1,:)+H_uv(2,:);
-            H_uv(4,:) = H_uv(3,:)+H_uv(4,:);
-            H_uv(2,:) = zeros(size(H_uv(2,:)));
-            H_uv(2,1) = -1;
-            H_uv(2,2) = 1;
-            H_uv(3,:) = zeros(size(H_uv(3,:)));
-            H_uv(3,3) = 1;
-            H_uv(3,4) = -1;
+            for i = 1:length(en_b_nodes2)
+                H_uv(en_b_nodes2(i,1),:) = H_uv(en_b_nodes2(i,1),:)+H_uv(en_b_nodes2(i,2),:);
+                H_uv(en_b_nodes2(i,2),:) = zeros(size(H_uv(en_b_nodes2(i,2),:)));
+                H_uv(en_b_nodes2(i,2),en_b_nodes2(i,1)) = -1;
+                H_uv(en_b_nodes2(i,2),en_b_nodes2(i,2)) = 1;
+                
+                H_uv(en_b_nodes2(i,1)+nn,:) = H_uv(en_b_nodes2(i,1)+nn,:)+H_uv(en_b_nodes2(i,2)+nn,:);
+                H_uv(en_b_nodes2(i,2)+nn,:) = zeros(size(H_uv(en_b_nodes2(i,2)+nn,:)));
+                H_uv(en_b_nodes2(i,2)+nn,en_b_nodes2(i,1)+nn) = -1;
+                H_uv(en_b_nodes2(i,2)+nn,en_b_nodes2(i,2)+nn) = 1;
+            end
             
-            H_uv(4+1,:) = H_uv(4+1,:)+H_uv(4+2,:);
-            H_uv(4+4,:) = H_uv(4+3,:)+H_uv(4+4,:);
-            H_uv(4+2,:) = zeros(size(H_uv(4+2,:)));
-            H_uv(4+2,4+1) = -1;
-            H_uv(4+2,4+2) = 1;
-            H_uv(4+3,:) = zeros(size(H_uv(4+3,:)));
-            H_uv(4+3,4+3) = 1;
-            H_uv(4+3,4+4) = -1;
             %%
             rhs_c = (H_c);
             [LH_uv,UH_uv]=lu(H_uv);
@@ -474,15 +471,14 @@ for step=1:nstep
     v_rhs=R*(Q'*reshape(ML.*vL,nL,1));
     
     %% hardcode manipulation
-    u_rhs(1) = u_rhs(1) + u_rhs(2);
-    u_rhs(2) = psi_p*en_on;
-    u_rhs(4) = u_rhs(4) + u_rhs(3);
-    u_rhs(3) = psi_p*en_on;
-    
-    v_rhs(1) = v_rhs(1) + v_rhs(2);
-    v_rhs(2) = 0;
-    v_rhs(4) = v_rhs(4) + v_rhs(3);
-    v_rhs(3) = 0;
+   
+    for i = 1:length(en_b_nodes2)
+        u_rhs(en_b_nodes2(i,1)) = u_rhs(en_b_nodes2(i,1))+u_rhs(en_b_nodes2(i,2));
+        u_rhs(en_b_nodes2(i,2)) = psi_p*en_on;
+        
+        v_rhs(en_b_nodes2(i,1)) = v_rhs(en_b_nodes2(i,1))+v_rhs(en_b_nodes2(i,2));
+        v_rhs(en_b_nodes2(i,2)) = 0;
+    end
     %%
     
         %%
