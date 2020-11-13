@@ -392,6 +392,7 @@ for step=1:nstep
             %% GUESS?
 %             terms_x(:,1,N_en_y+1) = terms_x(:,end,N_en_y);
 %             terms_x(:,end,Ey-N_en_y) = terms_x(:,1,Ey-N_en_y+1);
+%             terms_x(:,:,2) = terms_x(:,:,1);
             
             H_uv = (Ma_uv + A_uv*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
             H_c = 0;% (M_c + A_c*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
@@ -448,7 +449,7 @@ for step=1:nstep
     
 %   Nonlinear step - unassembled, not multiplied by mass matrix
 
-    fx1 = -convl(u,RX,Dh,u,v) + F + terms_x; % du = Cu  
+    fx1 = -convl(u,RX,Dh,u,v) + F; % du = Cu  
     fy1 = -convl(v,RX,Dh,u,v) + terms_y; % dv = Cv
     
     %%
@@ -481,6 +482,8 @@ for step=1:nstep
 %     u=R*(Q'*reshape(ML.*uL,nL,1)-Hbar*u_bc);
     u_rhs=R*(Q'*reshape(ML.*uL,nL,1));
     v_rhs=R*(Q'*reshape(ML.*vL,nL,1));
+  
+    u_rhs = u_rhs + dt/b0*R*Q'*reshape(terms_x,nL,1);
     
     %% hardcode manipulation
    
