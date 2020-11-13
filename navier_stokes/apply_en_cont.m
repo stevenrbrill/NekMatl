@@ -4,5 +4,5 @@ function out = apply_en_cont(M,nodes,psi)
 out = zeros(size(M(:,1)));
 
 for i = 1:length(nodes)
-    out = out + M(:,nodes(i))*(psi);
+    out = out + M(:,nodes(i))*(-psi);
 end

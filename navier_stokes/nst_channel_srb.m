@@ -20,7 +20,7 @@ format short;
 Re = 1; Pr=0.8; Pe=Re*Pr; 
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=1; % polynomial order  
+N=5; % polynomial order  
 Ex=1; % Number of elements in x
 Ey=3; % Number of elements in y
 CFL=0.1;
