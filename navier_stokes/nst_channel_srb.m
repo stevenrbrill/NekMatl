@@ -424,6 +424,18 @@ for step=1:nstep
             terms_y = zeros(N+1,N+1,E);
             
             H_uv = (Ma_uv + A_uv*dt/(b0*Re));
+            %% hardcode manipulation
+            for i = 1:length(en_b_nodes2)
+                H_uv(en_b_nodes2(i,1),:) = H_uv(en_b_nodes2(i,1),:)+H_uv(en_b_nodes2(i,2),:);
+                H_uv(en_b_nodes2(i,2),:) = zeros(size(H_uv(en_b_nodes2(i,2),:)));
+                H_uv(en_b_nodes2(i,2),en_b_nodes2(i,1)) = -1;
+                H_uv(en_b_nodes2(i,2),en_b_nodes2(i,2)) = 1;
+                
+                H_uv(en_b_nodes2(i,1)+nn,:) = H_uv(en_b_nodes2(i,1)+nn,:)+H_uv(en_b_nodes2(i,2)+nn,:);
+                H_uv(en_b_nodes2(i,2)+nn,:) = zeros(size(H_uv(en_b_nodes2(i,2)+nn,:)));
+                H_uv(en_b_nodes2(i,2)+nn,en_b_nodes2(i,1)+nn) = -1;
+                H_uv(en_b_nodes2(i,2)+nn,en_b_nodes2(i,2)+nn) = 1;
+            end
             rhs_c = zeros(size(Ma(:,1)));
             [LH_uv,UH_uv]=lu(H_uv);
 %             Hbar=(Bb+ Ab*dt/(b0*Re));
