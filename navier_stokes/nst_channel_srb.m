@@ -20,7 +20,7 @@ format short;
 Re = 1; Pr=0.8; Pe=Re*Pr; 
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=2; % polynomial order  
+N=5; % polynomial order  
 Ex=1; % Number of elements in x
 Ey=3; % Number of elements in y
 CFL=0.1;
@@ -449,7 +449,7 @@ for step=1:nstep
     
 %   Nonlinear step - unassembled, not multiplied by mass matrix
 
-    fx1 = -convl(u,RX,Dh,u,v) + F; % du = Cu  
+    fx1 = -convl(u,RX,Dh,u,v) + F +terms_x; % du = Cu  
     fy1 = -convl(v,RX,Dh,u,v) + terms_y; % dv = Cv
     
     %%
@@ -483,7 +483,7 @@ for step=1:nstep
     u_rhs=R*(Q'*reshape(ML.*uL,nL,1));
     v_rhs=R*(Q'*reshape(ML.*vL,nL,1));
   
-    u_rhs = u_rhs + dt/b0*R*Q'*reshape(terms_x,nL,1);
+%     u_rhs = u_rhs + dt/b0*R*Q'*reshape(terms_x,nL,1);
     
     %% hardcode manipulation
    
