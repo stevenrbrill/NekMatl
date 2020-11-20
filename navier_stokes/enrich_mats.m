@@ -1,4 +1,4 @@
-function[Mp,Sp,T1,T2,z,w] =  enrich_mats(Xe,Ye,E,N,fpsi,fgpsi,fhpsi)
+function[Mp,Sp,T1,T2,T1_alt,T1_alt2,Mp_alt,Sp_alt,z,w] =  enrich_mats(Xe,Ye,E,N,fpsi,fgpsi,fhpsi,jac)
 %
 %                                                 ^
 %     Compute the single element 1D SEM Stiffness Mass, and Convection
@@ -41,6 +41,14 @@ T1{1} = zeros(nb,E);
 T1{2} = zeros(nb,E);
 T2{1} = zeros(nb,E);
 T2{2} = zeros(nb,E);
+T1_alt{1} = zeros(nb,E);
+T1_alt{2} = zeros(nb,E);
+T1_alt2{1} = zeros(nb,E);
+T1_alt2{2} = zeros(nb,E);
+Mp_alt{1} = zeros(nb,nb,E);
+Mp_alt{2} = zeros(nb,nb,E);
+Sp_alt{1} = zeros(nb,nb,E);
+Sp_alt{2} = zeros(nb,nb,E);
 
 for e = 1:E
     X_min = min(min(Xe(:,:,e)));
@@ -80,11 +88,25 @@ for e = 1:E
     hpsib{4} = fhpsi{4}(zb_x,zb_y');
     
     Jac = L_x*L_y*ones(size(w2d));
+    Jac = 1.0472*ones(size(w2d));
+    
+    mask_y = zeros(size(z_y));
+    mask_y(1) = 1;
+    mask_y(end) = 1;
+    mask = ones(size(z_x))*mask_y';
     
     for k = 1:4
         for i = 1:nb
             for j = 1:nb
                 Mp{k}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*phi2d(:,:,j).*gpsi{k},'All');
+            end
+        end
+    end
+    
+    for k = 1:4
+        for i = 1:nb
+            for j = 1:nb
+                Mp_alt{k}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*phi2d(:,:,j).*gpsi{k}.*mask,'All');
             end
         end
     end
@@ -95,6 +117,11 @@ for e = 1:E
             Sp{2}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dyphi2d(:,:,j).*psi{1},'All');
             Sp{3}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dxphi2d(:,:,j).*psi{2},'All');
             Sp{4}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dyphi2d(:,:,j).*psi{2},'All');
+            
+            Sp_alt{1}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dxphi2d(:,:,j).*psi{1}.*mask,'All');
+            Sp_alt{2}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dyphi2d(:,:,j).*psi{1}.*mask,'All');
+            Sp_alt{3}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dxphi2d(:,:,j).*psi{2}.*mask,'All');
+            Sp_alt{4}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dyphi2d(:,:,j).*psi{2}.*mask,'All');
         end
     end
     
@@ -103,6 +130,8 @@ for e = 1:E
             %sum(Jac.*w2d.*phi2d(:,:,j).*hpsi{k},'All');
             T1{k}(j,e) = hpsib{2*(k-1)+1}(j)+hpsib{2*(k-1)+2}(j);
             T2{k}(j,e) = psib{1}(j)*gpsib{2*(k-1)+1}(j)+psib{2}(j)*gpsib{2*(k-1)+2}(j);
+            T1_alt{k}(j,e) = sum(Jac.*w2d.*dyphi2d(:,:,j).*gpsi{2*(k-1)+2},'All');
+            T1_alt2{k}(j,e) = sum(Jac.*w2d.*phi2d(:,:,j).*hpsi{2*(k-1)+2},'All');
         end
     end
     

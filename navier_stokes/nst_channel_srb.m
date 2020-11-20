@@ -240,7 +240,7 @@ psi_xy{1} = psi{1}(X,Y);
 psi_xy{2} = psi{2}(X,Y);
 if en_on
     disp("Computing enrichment")
-    [Mp,Sp,T1,T2,z_en,w_en] = enrich_mats(X,Y,E,N,psi,gpsi,hpsi);
+    [Mp,Sp,T1,T2,T1_alt,T1_alt2,Mp_alt,Sp_alt,z_en,w_en] = enrich_mats(X,Y,E,N,psi,gpsi,hpsi,J);
     nb = N1*N1;
         
     for k=1:2
@@ -250,9 +250,15 @@ if en_on
 %         T2_all{k} = zeros(nb*E,1);
         T1_all{k} = zeros(N+1,N+1,E);
         T2_all{k} = zeros(N+1,N+1,E);
+        T1_alt_all{k} = zeros(N+1,N+1,E);
+        T1_alt2_all{k} = zeros(N+1,N+1,E);
+        Mp_alt_all{k} = zeros(nb*E,nb*E);
+        Sp_alt_all{k} = zeros(nb*E,nb*E);
         
         T1_rs{k} = reshape(T1{k},[N+1,N+1,E]);
         T2_rs{k} = reshape(T2{k},[N+1,N+1,E]);
+        T1_alt_rs{k} = reshape(T1_alt{k},[N+1,N+1,E]);
+        T1_alt2_rs{k} = reshape(T1_alt2{k},[N+1,N+1,E]);
         
         % TODO: Assemble differently for different elements
         for iy = 1:Ey
@@ -267,7 +273,12 @@ if en_on
 %                     T2{k}(:,i) = T2{k}(:,i);
                     T1_all{k}(:,:,i) = T1_rs{k}(:,:,i); 
                     T2_all{k}(:,:,i) = T2_rs{k}(:,:,i);
-                end
+                    T1_alt_all{k}(:,:,i) = T1_alt_rs{k}(:,:,i); 
+                    T1_alt2_all{k}(:,:,i) = T1_alt2_rs{k}(:,:,i); 
+                else
+                    Mp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Mp_alt{k}(:,:,i);
+                    Sp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Sp_alt{k}(:,:,i);
+                end                
             end
         end
         %%
@@ -293,6 +304,10 @@ if en_on
         Sp_all{k} = sparse(Sp_all{k});
         Sp_all_c{k} = R*Q'*apply_en_cont(Sp_all{k},en_b_nodes,psi_p);
         Sp_all{k} = R*Q'*Sp_all{k}*Q*R';
+        
+        Mp_alt_all{k} = sparse(Mp_alt_all{k});        
+        Mp_alt_all_c{k} = R*Q'*apply_en_cont(Mp_alt_all{k},en_b_nodes,psi_p);
+        Mp_alt_all{k} = R*Q'*Mp_alt_all{k}*Q*R';
         
 %         T1_all{k} = sparse(T1_all{k});
 %         T2_all{k} = sparse(T2_all{k});
@@ -402,6 +417,8 @@ for step=1:nstep
             [LH_y,UH_y]=lu(H_y);
             terms_x = 1/Re*(T1_all{1})+T2_all{1};
             terms_y = 1/Re*(T1_all{2})+T2_all{2};
+            terms_x(:,1,2) = -1;
+            terms_x(:,end,2) = -1;
             
             H_uv = (Ma_uv + A_uv*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
             H_c = (M_c + A_c*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
@@ -465,6 +482,8 @@ for step=1:nstep
 %     u=R*(Q'*reshape(ML.*uL,nL,1)-Hbar*u_bc);
     u_rhs=R*(Q'*reshape(ML.*uL,nL,1));
     v_rhs=R*(Q'*reshape(ML.*vL,nL,1));
+    
+    u_rhs = u_rhs; %  + (dt/b0)*1/Re*R*Q'*reshape(T1_alt2_all{1},nL,1);
     
         %%
     u_rhs_check = u_rhs;
