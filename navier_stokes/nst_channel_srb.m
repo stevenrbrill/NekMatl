@@ -18,32 +18,33 @@ pointstyles = {'ko','bo','ro','go','co','mo','k^','b^','r^','g^','c^','m^','ks',
 format compact;
 format short; 
 Re = 1; Pr=0.8; Pe=Re*Pr; 
+dpdx = 1;
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=5; % polynomial order  
-Ex=1; % Number of elements in x
+N=4; % polynomial order  
+Ex=3; % Number of elements in x
 Ey=3; % Number of elements in y
 CFL=0.1;
 u_ic = Re;
 pert = 0.0;
-f_ic = @(x,y) u_ic*(1-y.^2)/2;
+f_ic = @(x,y) u_ic*dpdx*(1-y.^2)/2;
 
 %% Enrichment information
 en_on = 1;
-N_en_y = 1; 
-psi = {@(x,y) (0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
-gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-1.*y + 0.*x), ...
-        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-1 - 0.*y + 0.*x), ...
-        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+N_en_y = 3; 
+% psi = {@(x,y) dpdx*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
+% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) dpdx*(-1.*y + 0.*x), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) dpdx*(-1 - 0.*y + 0.*x), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
     
 % enrich y^4    
-% psi = {@(x,y) (0.5*(1 - y.^4) + 0.*x), @(x,y) 0.*y + 0.*x};
-% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-2.*y.^3 + 0.*x), ...
-%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-6.*y.^2 + 0.*x), ...
-%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-%    
+psi = {@(x,y) (0.5*(1 - y.^4) + 0.*x), @(x,y) 0.*y + 0.*x};
+gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-2.*y.^3 + 0.*x), ...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-6.*y.^2 + 0.*x), ...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+   
 
 % enrich y^6    
 % psi = {@(x,y) (0.5*(1 - y.^6) + 0.*x), @(x,y) 0.*y + 0.*x};
@@ -342,7 +343,7 @@ end
 %%
 
 dxmin=pi*(z(N1)-z(N))/(2*Ex); % Get min dx for CFL constraint
-Tfinal=150; 
+Tfinal=100; 
 dt=CFL*dxmin/u_ic; 
 nstep=ceil(Tfinal/dt); 
 dt=Tfinal/nstep; 
@@ -378,7 +379,7 @@ end
 u1=u; u2=u; u3=u; fx3=u; fx2=u; fx1=u;
 v1=v; v2=v; v3=v; fy3=v; fy2=v; fy1=v;
 
-F = ones(size(ML));
+F = dpdx*ones(size(ML));
 % Fb=reshape(ML.*F,nL,1); %% Output
 % 
 % Fb=Bb\(Q'*Fb);  

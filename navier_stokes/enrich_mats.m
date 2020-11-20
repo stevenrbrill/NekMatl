@@ -7,7 +7,8 @@ function[Mp,Sp,T1,T2,T1_alt,T1_alt2,Mp_alt,Sp_alt,z,w] =  enrich_mats(Xe,Ye,E,N,
 %
 
 [Ah,Bh,Ch,Dh,zb,wb] = semhat(N);
-[z,w] = zwgll(N);
+N_quad = 4*N;
+[z,w] = zwgll(N_quad);
 nq = length(z);
 basis = get_nodal_basis_coeffs(zb);
 phi = zeros(nq,N+1);
@@ -87,8 +88,7 @@ for e = 1:E
     hpsib{3} = fhpsi{3}(zb_x,zb_y');
     hpsib{4} = fhpsi{4}(zb_x,zb_y');
     
-    Jac = L_x*L_y*ones(size(w2d));
-    Jac = 1.0472*ones(size(w2d));
+    Jac = L_x/2*L_y/2*ones(size(w2d));
     
     mask_y = zeros(size(z_y));
     mask_y(1) = 1;
