@@ -417,8 +417,6 @@ for step=1:nstep
             [LH_y,UH_y]=lu(H_y);
             terms_x = 1/Re*(T1_all{1})+T2_all{1};
             terms_y = 1/Re*(T1_all{2})+T2_all{2};
-            terms_x(:,1,2) = -1;
-            terms_x(:,end,2) = -1;
             
             H_uv = (Ma_uv + A_uv*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
             H_c = (M_c + A_c*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
