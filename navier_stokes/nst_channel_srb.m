@@ -286,8 +286,8 @@ if en_on
                     T1_alt_all{k}(:,:,i) = T1_alt_rs{k}(:,:,i); 
                     T1_alt2_all{k}(:,:,i) = T1_alt2_rs{k}(:,:,i); 
                 else
-                    Mp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Mp_alt{k}(:,:,i);
-                    Sp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Sp_alt{k}(:,:,i);
+%                     Mp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Mp_alt{k}(:,:,i);
+%                     Sp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Sp_alt{k}(:,:,i);
                 end                
             end
         end
@@ -445,6 +445,7 @@ for step=1:nstep
             terms_y = zeros(N+1,N+1,E);
             
             H_uv = (Ma_uv + A_uv*dt/(b0*Re));
+            H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re)); 
             rhs_c = zeros(size(Ma(:,1)));
             [LH_uv,UH_uv]=lu(H_uv);
 %             Hbar=(Bb+ Ab*dt/(b0*Re));
