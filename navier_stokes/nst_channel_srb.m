@@ -147,6 +147,15 @@ hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) dpdx*(-1 - 0.*y + 0.*x), ...
 % hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) ((1-abs(y))<=en_loc).*(-1 - 0.*y + 0.*x), ...
 %         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 
+% Flat enrichment in middle
+% Middle is higher than normal enrichment
+% en_loc = 2/Ey+0.0001;
+% psi = {@(x,y) ((1-abs(y))<=en_loc).*(0.5*(1 - y.^2) + 0.*x)+((1-abs(y))>en_loc).*0.5*(1-(1-2/Ey)^2), @(x,y) 0.*y + 0.*x};
+% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) ((1-abs(y))<=en_loc).*(-1.*y + 0.*x), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) ((1-abs(y))<=en_loc).*(-1 - 0.*y + 0.*x), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+
 % 0 enrichment
 % psi = {@(x,y) 0+0.*y + 0.*x, @(x,y) 0+0.*y + 0.*x;};
 % gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
