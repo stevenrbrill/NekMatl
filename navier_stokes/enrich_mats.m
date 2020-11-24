@@ -131,7 +131,7 @@ for e = 1:E
             %sum(Jac.*w2d.*phi2d(:,:,j).*hpsi{k},'All');
             T1{k}(j,e) = hpsib{2*(k-1)+1}(j)+hpsib{2*(k-1)+2}(j);
             T2{k}(j,e) = psib{1}(j)*gpsib{2*(k-1)+1}(j)+psib{2}(j)*gpsib{2*(k-1)+2}(j);
-            T1_alt{k}(j,e) = -sum(Jac.*w2d.*dyphi2d(:,:,j).*2/L_y.*gpsi{2*(k-1)+2},'All') + sum(-L_x/2.*w.*phi2d(:,1,j).*gpsi{2*(k-1)+2}(:,1),'All')  + sum(L_x/2.*w.*phi2d(:,end,j).*gpsi{2*(k-1)+2}(:,end),'All');
+            T1_alt{k}(j,e) = -sum(Jac.*w2d.*dyphi2d(:,:,j).*2/L_y.*gpsi{2*(k-1)+2},'All'); % + sum(-L_x/2.*w.*phi2d(:,1,j).*gpsi{2*(k-1)+2}(:,1),'All')  + sum(L_x/2.*w.*phi2d(:,end,j).*gpsi{2*(k-1)+2}(:,end),'All');
             T1_alt2{k}(j,e) = sum(Jac.*w2d.*phi2d(:,:,j).*hpsi{2*(k-1)+2},'All');
         end
     end

@@ -1,4 +1,4 @@
-function[G_total,Gs_x,Gs_y] =  face_mats(Xe,Ye,E,N)
+function[G_total,Gs_x,Gs_y,G_test] =  face_mats(Xe,Ye,E,N)
 %
 %                                                 ^
 %     Compute the single element 1D SEM Stiffness Mass, and Convection
@@ -7,7 +7,7 @@ function[G_total,Gs_x,Gs_y] =  face_mats(Xe,Ye,E,N)
 %
 
 [Ah,Bh,Ch,Dh,zb,wb] = semhat(N);
-N_quad = N;
+N_quad = 4*N;
 [z,w] = zwgll(N_quad);
 nq = length(z);
 basis = get_nodal_basis_coeffs(zb);
@@ -41,6 +41,9 @@ G{4} = zeros(nb,nb,E);
 G_total = zeros(nb*E);
 Gs_x = zeros(nb*E);
 Gs_y = zeros(nb*E);
+G_test{1} = zeros(nb,E);
+G_test{2} = zeros(nb,E);
+
 
 
 for e = 1:E
@@ -78,5 +81,11 @@ for e = 1:E
         Gs_y(1+nb*(e-1):nb*(e),1+nb*(e-1):nb*(e)) = G{1}(:,:,e) + G{3}(:,:,e);
         Gs_x(1+nb*(e-1):nb*(e),1+nb*(e-1):nb*(e)) = G{2}(:,:,e) + G{4}(:,:,e);
 %     end
+
+
+            for j = 1:nb
+                G_test{1}(j,e) =  sum(-Jac_x.*w.*phi2d(:,1,j),'All');
+                G_test{2}(j,e) =  sum(Jac_x.*w.*phi2d(:,end,j),'All');
+            end
 end
 

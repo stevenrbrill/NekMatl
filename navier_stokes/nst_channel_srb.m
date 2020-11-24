@@ -10,6 +10,7 @@ set(0,'defaultLineLineWidth',2.5)
 
 linestyles = {'k-','b-','r-','g-','c-','m-','k--','b--','r--','g--','c--','m--','k-.','b-.','r-.','g-.','c-.','m-.','k:','b:','r:','g:','c:','m:'};
 pointstyles = {'ko','bo','ro','go','co','mo','k^','b^','r^','g^','c^','m^','ks','bs','rs','gs','cs','ms','k*','b*','r*','g*','c*','m*','k+','b+','r+','g+','c+','m+'};
+%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Navier-Stokes Solver Demo (2D Channel)
@@ -21,17 +22,17 @@ Re = 1; Pr=0.8; Pe=Re*Pr;
 dpdx = 1;
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=1; % polynomial order  
-Ex=1; % Number of elements in x
-Ey=3; % Number of elements in y
+N=4; % polynomial order  
+Ex=2; % Number of elements in x
+Ey=5; % Number of elements in y
 CFL=0.1;
 u_ic = Re;
 pert = 0.0;
-f_ic = @(x,y) u_ic*dpdx*(1-y.^2)/2;
+f_ic = @(x,y) u_ic*dpdx*(1-y.^4)/2;
 
 %% Enrichment information
 en_on = 1;
-N_en_y = 3; 
+N_en_y = 1; 
 psi = {@(x,y) dpdx*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
 gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) dpdx*(-1.*y + 0.*x), ...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
@@ -171,6 +172,8 @@ set(gca, 'YGrid', 'on', 'XGrid', 'off')
     yticks(linspace(-1,1,Ey+1));
 
 psi_p = psi{1}(0,N_en_y*2/Ey-1);
+dypsi_p1 = gpsi{2}(0,N_en_y*2/Ey-1);
+dypsi_p2 = gpsi{2}(0,1-N_en_y*2/Ey);
 
 %% Begin Solve
 E=Ex*Ey; % Total number of elements
@@ -361,7 +364,7 @@ end
 %%
 
 dxmin=pi*(z(N1)-z(N))/(2*Ex); % Get min dx for CFL constraint
-Tfinal=100; 
+Tfinal=50; 
 dt=CFL*dxmin/u_ic; 
 nstep=ceil(Tfinal/dt); 
 dt=Tfinal/nstep; 
@@ -406,7 +409,7 @@ uv = [u;v];
 
 %%
 uv_ic_check = uv;
-%%
+%%+G_uv
 
 %% Setup BC if nonzero
 % u_bc = ones(size(u)).*((Y==1)+(Y==-1));
@@ -434,11 +437,13 @@ for step=1:nstep
             H_y=(Ma + A*dt/(b0*Re));
             [LH_x,UH_x]=lu(H_x);
             [LH_y,UH_y]=lu(H_y);
-            terms_x = 1/Re*(T1_all{1})+T2_all{1};
+            terms_x = 0*1/Re*(T1_all{1})+T2_all{1};
             terms_y = 1/Re*(T1_all{2})+T2_all{2};
+%             terms_x(:,1,2) = -dypsi_p1*ones(size(terms_x(:,1,2)));
+%             terms_x(:,end,2) = -dypsi_p1*ones(size(terms_x(:,end,2)));
             
-            H_uv = (Ma_uv + (A_uv+G_uv)*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
-            H_c = (M_c + (A_c+Gs_c)*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
+            H_uv = (Ma_uv + (A_uv+0*G_uv)*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
+            H_c = (M_c + (A_c+0*Gs_c)*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
             H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re) + dt/b0*(Mp_uv_check + Sp_uv_check));
             H_q_check = R*Q'*(apply_en_cont(H_check(1:nL,1:nL),en_b_nodes,psi_p)+apply_en_cont(H_check(1:nL,nL+1:2*nL),en_b_nodes,psi_p));
             H_q = full(H_uv);
@@ -453,7 +458,7 @@ for step=1:nstep
             terms_x = zeros(N+1,N+1,E);
             terms_y = zeros(N+1,N+1,E);
             
-            H_uv = (Ma_uv + (A_uv+G_uv)*dt/(b0*Re));
+            H_uv = (Ma_uv + (A_uv)*dt/(b0*Re));
             H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re)); 
             rhs_c = zeros(size(Ma(:,1)));
             [LH_uv,UH_uv]=lu(H_uv);
@@ -469,7 +474,7 @@ for step=1:nstep
 
     fx1 = -convl(u,RX,Dh,u,v) + F + terms_x; % du = Cu  
     fy1 = -convl(v,RX,Dh,u,v) + terms_y; % dv = Cv
-    
+
     %%
     convl_x_check = -convl(u,RX,Dh,u,v);
     convl_y_check = -convl(v,RX,Dh,u,v);
@@ -501,7 +506,7 @@ for step=1:nstep
     u_rhs=R*(Q'*reshape(ML.*uL,nL,1));
     v_rhs=R*(Q'*reshape(ML.*vL,nL,1));
     
-    u_rhs = u_rhs; %  + (dt/b0)*1/Re*R*Q'*reshape(T1_alt2_all{1},nL,1);
+    u_rhs = u_rhs + (dt/b0)*1/Re*R*Q'*reshape(T1_alt_all{1},nL,1);
     
         %%
     u_rhs_check = u_rhs;
@@ -526,7 +531,7 @@ for step=1:nstep
     
     
 %% Output
-    if mod(step,100)==0
+    if mod(step,10)==0
         plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
     end
 
