@@ -192,6 +192,10 @@ end
         
 [G,J,ML,RX]=make_coef(X,Y);
 [Ah,Bh,Ch,Dh,z,w]=semhat(N);
+[Gs, Gs_x, Gs_y] =  face_mats(X,Y,E,N);
+Gs_c = R*Q'*apply_en_cont(Gs,en_b_nodes,psi_p);
+Gsb = R*Q'*Gs*Q*R';
+
 
 [n,nb]=size(R); 
 nL=N1*N1*E;
@@ -243,6 +247,11 @@ A_uv = sparse(A_uv);
 ML_uv = zeros(2*(N+1),2*(N+1),E);
 ML_uv(1:N+1,1:N+1,1:E) = ML;
 ML_uv(N+2:2*(N+1),N+2:2*(N+1),1:E) = ML;
+G_uv = zeros(2*nn);
+G_uv(1:nn,1:nn) = Gsb;
+G_uv(nn+1:2*nn,nn+1:2*nn) = Gsb;
+G_uv = sparse(G_uv);
+
 
 
 %% Assemble enrichment matrices
@@ -428,8 +437,8 @@ for step=1:nstep
             terms_x = 1/Re*(T1_all{1})+T2_all{1};
             terms_y = 1/Re*(T1_all{2})+T2_all{2};
             
-            H_uv = (Ma_uv + A_uv*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
-            H_c = (M_c + A_c*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
+            H_uv = (Ma_uv + (A_uv+G_uv)*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
+            H_c = (M_c + (A_c+Gs_c)*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
             H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re) + dt/b0*(Mp_uv_check + Sp_uv_check));
             H_q_check = R*Q'*(apply_en_cont(H_check(1:nL,1:nL),en_b_nodes,psi_p)+apply_en_cont(H_check(1:nL,nL+1:2*nL),en_b_nodes,psi_p));
             H_q = full(H_uv);
@@ -444,7 +453,7 @@ for step=1:nstep
             terms_x = zeros(N+1,N+1,E);
             terms_y = zeros(N+1,N+1,E);
             
-            H_uv = (Ma_uv + A_uv*dt/(b0*Re));
+            H_uv = (Ma_uv + (A_uv+G_uv)*dt/(b0*Re));
             H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re)); 
             rhs_c = zeros(size(Ma(:,1)));
             [LH_uv,UH_uv]=lu(H_uv);
