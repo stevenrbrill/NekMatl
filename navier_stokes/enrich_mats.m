@@ -7,7 +7,7 @@ function[Mp,Sp,T1,T2,T1_alt,T1_alt2,Mp_alt,Sp_alt,z,w] =  enrich_mats(Xe,Ye,E,N,
 %
 
 [Ah,Bh,Ch,Dh,zb,wb] = semhat(N);
-N_quad = 4*N;
+N_quad = N;
 [z,w] = zwgll(N_quad);
 nq = length(z);
 basis = get_nodal_basis_coeffs(zb);
@@ -114,15 +114,15 @@ for e = 1:E
 
     for i = 1:nb
         for j = 1:nb
-            Sp{1}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dxphi2d(:,:,j).*psi{1},'All');
-            Sp{2}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dyphi2d(:,:,j).*psi{1},'All');
-            Sp{3}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dxphi2d(:,:,j).*psi{2},'All');
-            Sp{4}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dyphi2d(:,:,j).*psi{2},'All');
+            Sp{1}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dxphi2d(:,:,j).*2/L_x.*psi{1},'All');
+            Sp{2}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dyphi2d(:,:,j).*2/L_y.*psi{1},'All');
+            Sp{3}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dxphi2d(:,:,j).*2/L_x.*psi{2},'All');
+            Sp{4}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dyphi2d(:,:,j).*2/L_y.*psi{2},'All');
             
-            Sp_alt{1}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dxphi2d(:,:,j).*psi{1}.*mask,'All');
-            Sp_alt{2}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dyphi2d(:,:,j).*psi{1}.*mask,'All');
-            Sp_alt{3}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dxphi2d(:,:,j).*psi{2}.*mask,'All');
-            Sp_alt{4}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dyphi2d(:,:,j).*psi{2}.*mask,'All');
+            Sp_alt{1}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dxphi2d(:,:,j).*2/L_x.*psi{1}.*mask,'All');
+            Sp_alt{2}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dyphi2d(:,:,j).*2/L_y.*psi{1}.*mask,'All');
+            Sp_alt{3}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dxphi2d(:,:,j).*2/L_x.*psi{2}.*mask,'All');
+            Sp_alt{4}(i,j,e) = sum(Jac.*w2d.*phi2d(:,:,i).*dyphi2d(:,:,j).*2/L_y.*psi{2}.*mask,'All');
         end
     end
     

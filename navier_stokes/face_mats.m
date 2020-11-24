@@ -62,14 +62,16 @@ for e = 1:E
     Jac = L_x/2*L_y/2*ones(size(w2d));
     Jac_x = L_x/2*ones(size(w));
     Jac_y = L_y/2*ones(size(w'));
+    ijac_y = 1/Jac_y(1);
+    ijac_x = 1/Jac_x(1);
     
 %     for k = 1:4
         for i = 1:nb
             for j = 1:nb
-                G{1}(i,j,e) = G{1}(i,j,e) + sum(-Jac_x.*w.*phi2d(:,1,i).*dyphi2d(:,1,j),'All');
-                G{2}(i,j,e) = G{2}(i,j,e) + sum(Jac_y.*w'.*phi2d(end,:,i).*dxphi2d(end,:,j),'All');
-                G{3}(i,j,e) = G{3}(i,j,e) + sum(Jac_x.*w.*phi2d(:,end,i).*dyphi2d(:,end,j),'All');
-                G{4}(i,j,e) = G{4}(i,j,e) + sum(-Jac_y.*w'.*phi2d(1,:,i).*dxphi2d(1,:,j),'All');
+                G{1}(j,i,e) = G{1}(j,i,e) + sum(-Jac_x.*w.*phi2d(:,1,j).*dyphi2d(:,1,i)*ijac_y,'All');
+                G{2}(j,i,e) = G{2}(j,i,e) + sum(Jac_y.*w'.*phi2d(end,:,j).*dxphi2d(end,:,i)*ijac_x,'All');
+                G{3}(j,i,e) = G{3}(j,i,e) + sum(Jac_x.*w.*phi2d(:,end,j).*dyphi2d(:,end,i)*ijac_y,'All');
+                G{4}(j,i,e) = G{4}(j,i,e) + sum(-Jac_y.*w'.*phi2d(1,:,j).*dxphi2d(1,:,i)*ijac_x,'All');
             end
         end
         G_total(1+nb*(e-1):nb*(e),1+nb*(e-1):nb*(e)) = G{1}(:,:,e) + G{2}(:,:,e) + G{3}(:,:,e) + G{4}(:,:,e);
