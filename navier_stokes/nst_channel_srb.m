@@ -58,13 +58,13 @@ hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
     
 
 %% Plot psi
-figure
+figure(5)
 ys_plot = linspace(-1,1,1000);
 plot(psi{1}(0,ys_plot),ys_plot)
 xlabel('\psi')
 ylabel('y')
 set(gca, 'YGrid', 'on', 'XGrid', 'off')
-    yticks(linspace(-1,1,Ey+1));
+yticks(linspace(-1,1,Ey+1));
 
 psi_p = psi{1}(0,N_en_y*2/Ey-1);
 dypsi_p1 = gpsi{2}(0,N_en_y*2/Ey-1);
