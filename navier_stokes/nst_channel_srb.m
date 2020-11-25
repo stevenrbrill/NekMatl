@@ -318,8 +318,6 @@ for step=1:nstep
             
             H_uv = (Ma_uv + (A_uv)*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
             H_c = (M_c + (A_c)*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
-            H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re) + dt/b0*(Mp_uv_check + Sp_uv_check));
-            H_q_check = R*Q'*(apply_en_cont(H_check(1:nL,1:nL),en_b_nodes,psi_p)+apply_en_cont(H_check(1:nL,nL+1:2*nL),en_b_nodes,psi_p));
             H_q = full(H_uv);
             rhs_c = (H_c);
             [LH_uv,UH_uv]=lu(H_uv);
@@ -348,10 +346,7 @@ for step=1:nstep
 
     fx1 = -convl(u,RX,Dh,u,v) + F; % du = Cu  
     fy1 = -convl(v,RX,Dh,u,v); % dv = Cv
-
-    %%
-    convl_x_check = -convl(u,RX,Dh,u,v);
-    convl_y_check = -convl(v,RX,Dh,u,v);
+    
     %%
 
     rx  = a(1)*fx1+a(2)*fx2+a(3)*fx3; % kth-order extrapolation
@@ -370,9 +365,7 @@ for step=1:nstep
     [uL,vL,pr]=pressure_project(ut,vt,Ai,Q,ML,RX,Dh); % Div-free velocity
     pr = (b0/dt)*pr;
     
-    %%
-    uL_check = uL;
-    vL_check = vL;
+
     %%
 
     %   Set RHS.                 %Viscous update. %  Convert to local form.
@@ -382,18 +375,12 @@ for step=1:nstep
     
     u_rhs = u_rhs + T1_rhs;
     
-        %%
-    u_rhs_check = u_rhs;
-    v_rhs_check = v_rhs;
     %%
     
     uv = [u_rhs+rhs_c;v_rhs];
-    uv_check = uv;
-%     uv = [u;v];
     uv=UH_uv\(LH_uv\uv);
     u = uv(1:nn);
     v = uv(nn+1:2*nn);
-%     u=Q*(R'*u+u_bc);
     u=Q*(R'*u);
     if en_on
         u = apply_en_cont_soln(Ey,N_en_y,en_b_nodes,u,psi_p);
