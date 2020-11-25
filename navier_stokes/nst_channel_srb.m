@@ -311,8 +311,10 @@ for step=1:nstep
             H_y=(Ma + A*dt/(b0*Re));
             [LH_x,UH_x]=lu(H_x);
             [LH_y,UH_y]=lu(H_y);
-            terms_x = 0*1/Re*(T1_all{1})+T2_all{1};
+            terms_x = 1/Re*(T1_all{1})+T2_all{1};
             terms_y = 1/Re*(T1_all{2})+T2_all{2};
+            
+            T1_rhs = (dt/b0)*1/Re*R*Q'*reshape(T1_alt_all{1},nL,1);
             
             H_uv = (Ma_uv + (A_uv)*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
             H_c = (M_c + (A_c)*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
@@ -344,8 +346,8 @@ for step=1:nstep
     
 %   Nonlinear step - unassembled, not multiplied by mass matrix
 
-    fx1 = -convl(u,RX,Dh,u,v) + F + terms_x; % du = Cu  
-    fy1 = -convl(v,RX,Dh,u,v) + terms_y; % dv = Cv
+    fx1 = -convl(u,RX,Dh,u,v) + F; % du = Cu  
+    fy1 = -convl(v,RX,Dh,u,v); % dv = Cv
 
     %%
     convl_x_check = -convl(u,RX,Dh,u,v);
@@ -378,7 +380,7 @@ for step=1:nstep
     u_rhs=R*(Q'*reshape(ML.*uL,nL,1));
     v_rhs=R*(Q'*reshape(ML.*vL,nL,1));
     
-    u_rhs = u_rhs + (dt/b0)*1/Re*R*Q'*reshape(T1_alt_all{1},nL,1);
+    u_rhs = u_rhs + T1_rhs;
     
         %%
     u_rhs_check = u_rhs;
