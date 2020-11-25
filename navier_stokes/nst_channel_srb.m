@@ -18,27 +18,34 @@ pointstyles = {'ko','bo','ro','go','co','mo','k^','b^','r^','g^','c^','m^','ks',
 
 format compact;
 format short; 
-Re = 10; Pr=0.8; Pe=Re*Pr; 
+Re = 1; Pr=0.8; Pe=Re*Pr; 
 dpdx = 1;
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=4; % polynomial order  
+N=3; % polynomial order  
 Ex=1; % Number of elements in x
-Ey=5; % Number of elements in y
-CFL=0.1;
+Ey=3; % Number of elements in y
+CFL=0.025;
 u_ic = Re;
-pert = 0.0;
-f_ic = @(x,y) u_ic*(1-y.^4)/2;
+pert = 0.1;
+f_ic = @(x,y) u_ic*(1-y.^8)/2;
 
 %% Enrichment information
-en_on = 1;
+en_on = 0;
 N_en_y = 1; 
-en_mag = 10;
+en_mag = 1;
 psi = {@(x,y) en_mag*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
 gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1.*y + 0.*x), ...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+    
+    psi = {@(x,y) (0.5*(1 - y.^4) + 0.*x), @(x,y) 0.*y + 0.*x};
+gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-2.*y.^3 + 0.*x), ...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-6.*y.^2 + 0.*x), ...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+   
 
     
 % Law of the wall
@@ -300,7 +307,7 @@ plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
 % psi_c = zeros(psi_len,1);
 % psi_c(1:psi_len/2) = -1*ones(psi_len/2,1)*psi_p;
 % psi_c(psi_len/2+1:psi_len) = 1*ones(psi_len/2,1)*psi_p;
-for step=1:nstep 
+for step=1:nstep
     time=step*dt;
     if step==1; b0=1.0;    b= [ -1 0 0 ]';       a=[ 1  0 0 ]'; end
     if step==2; b0=1.5;    b=([ -4 1 0 ]')./2;   a=[ 2 -1 0 ]'; end
@@ -393,7 +400,7 @@ for step=1:nstep
     
     
 %% Output
-    if mod(step,5000)==0
+    if mod(step,100)==0
         plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
         if mod(step,5000)==0
             fname = strcat("soln_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ex),"_step_",num2str(step),".mat");

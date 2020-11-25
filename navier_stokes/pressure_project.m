@@ -8,14 +8,6 @@ for e=1:E;
   re(:,:,e)=Dh'*rr+rs*Dh;
 end;
 
-re=ut;
-for e=1:E;
-  rr=ML(:,:,e).*(RX(:,:,1,e).*ut(:,:,e)+RX(:,:,3,e).*vt(:,:,e));
-  rs=ML(:,:,e).*(RX(:,:,2,e).*ut(:,:,e)+RX(:,:,4,e).*vt(:,:,e));
-  re(:,:,e)=Dh'*rr+rs*Dh;
-end;
-
-
 r=Q'*reshape(re,nL,1); 
 n=size(r,1); 
 r=r-sum(r)/n;
