@@ -296,11 +296,9 @@ for step=1:nstep
             [LH_y,UH_y]=lu(H_y);
             terms_x = 0*1/Re*(T1_all{1})+T2_all{1};
             terms_y = 1/Re*(T1_all{2})+T2_all{2};
-%             terms_x(:,1,2) = -dypsi_p1*ones(size(terms_x(:,1,2)));
-%             terms_x(:,end,2) = -dypsi_p1*ones(size(terms_x(:,end,2)));
             
-            H_uv = (Ma_uv + (A_uv+0*G_uv)*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
-            H_c = (M_c + (A_c+0*Gs_c)*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
+            H_uv = (Ma_uv + (A_uv)*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
+            H_c = (M_c + (A_c)*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
             H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re) + dt/b0*(Mp_uv_check + Sp_uv_check));
             H_q_check = R*Q'*(apply_en_cont(H_check(1:nL,1:nL),en_b_nodes,psi_p)+apply_en_cont(H_check(1:nL,nL+1:2*nL),en_b_nodes,psi_p));
             H_q = full(H_uv);
