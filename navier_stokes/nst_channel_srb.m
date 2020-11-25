@@ -18,26 +18,43 @@ pointstyles = {'ko','bo','ro','go','co','mo','k^','b^','r^','g^','c^','m^','ks',
 
 format compact;
 format short; 
-Re = 1; Pr=0.8; Pe=Re*Pr; 
+Re = 10; Pr=0.8; Pe=Re*Pr; 
 dpdx = 1;
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
 N=4; % polynomial order  
-Ex=2; % Number of elements in x
+Ex=1; % Number of elements in x
 Ey=5; % Number of elements in y
 CFL=0.1;
 u_ic = Re;
 pert = 0.0;
-f_ic = @(x,y) u_ic*dpdx*(1-y.^4)/2;
+f_ic = @(x,y) u_ic*(1-y.^4)/2;
 
 %% Enrichment information
 en_on = 1;
 N_en_y = 1; 
-psi = {@(x,y) dpdx*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
-gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) dpdx*(-1.*y + 0.*x), ...
+en_mag = 10;
+psi = {@(x,y) en_mag*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
+gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1.*y + 0.*x), ...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) dpdx*(-1 - 0.*y + 0.*x), ...
+hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+
+    
+% Law of the wall
+% Re_t = Re;
+% u_tau = 1;
+% nu = 1/Re_t;
+% kap = 0.41;
+% beta = 5.2;
+% dypdy = u_tau/nu;
+% ypb = 11.062299784340414;
+% yp = @(y) (1-abs(y))*Re_t;
+% psi = {@(x,y) (yp(y) <= ypb).*yp(y) + (yp(y) > ypb).*(1./kap.*log(yp(y)+eps)+beta) + 0.*x, @(x,y) 0.*y + 0.*x};
+% gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) ((yp(y) <= ypb).*1 + (yp(y) > ypb).*1/(kap*(yp(y)+eps)))*dypdy + 0.*x,...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) ((yp(y) <= ypb).*0 + (yp(y) > ypb).*-1./(kap*(yp(y)+eps).^2))*dypdy*dypdy + 0.*x,...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
     
 
 %% Plot psi
@@ -386,7 +403,7 @@ for step=1:nstep
     
     
 %% Output
-    if mod(step,10)==0
+    if mod(step,1000)==0
         plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
     end
 

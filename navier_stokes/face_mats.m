@@ -7,7 +7,7 @@ function[G_total,Gs_x,Gs_y,G_test] =  face_mats(Xe,Ye,E,N)
 %
 
 [Ah,Bh,Ch,Dh,zb,wb] = semhat(N);
-N_quad = 4*N;
+N_quad = N;
 [z,w] = zwgll(N_quad);
 nq = length(z);
 basis = get_nodal_basis_coeffs(zb);
