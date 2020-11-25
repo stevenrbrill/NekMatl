@@ -329,6 +329,7 @@ for step=1:nstep
 
             terms_x = zeros(N+1,N+1,E);
             terms_y = zeros(N+1,N+1,E);
+            T1_rhs = 0;
             
             H_uv = (Ma_uv + (A_uv)*dt/(b0*Re));
             H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re)); 
@@ -392,8 +393,12 @@ for step=1:nstep
     
     
 %% Output
-    if mod(step,1000)==0
+    if mod(step,5000)==0
         plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
+        if mod(step,5000)==0
+            fname = strcat("soln_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ex),"_step_",num2str(step),".mat");
+            save(fname,"u","v","pr","psi","gpsi","hpsi","N","Ex","Ey","en_on","time","psi_xy","N_en_y","w","X","Y","Ys","Re","pert");
+        end
     end
 
 end
