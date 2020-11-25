@@ -57,11 +57,7 @@ dypsi_p2 = gpsi{2}(0,1-N_en_y*2/Ey);
 E=Ex*Ey; % Total number of elements
 N1=N+1;
 disp("Generating Matrices")
-% if en_on
-%     Q=makeq_en(Ex,Ey,N,N_en_y);
-% else
-    Q=makeq(Ex,Ey,N); % Global continuity
-% end
+Q=makeq(Ex,Ey,N); % Global continuity
 R=maker(Q,Ex,N); % Restriction matrix, applies Dirichlet conditions
 [X,Y]=make_geom_channel(Ex,Ey,N);      % Geometry in local form
 en_b_nodes = get_en_bound_nodes(Ex,Ey,N,N_en_y);
@@ -113,8 +109,6 @@ S_q = full(A);
 
 
 %%
-
-
 % Assemble overall system matrices
 nn = length(Ma); % number of nodes in the domain
 Ma_uv = zeros(2*nn);
@@ -146,8 +140,6 @@ if en_on
     for k=1:2
         Mp_all{k} = zeros(nb*E,nb*E);
         Sp_all{k} = zeros(nb*E,nb*E);
-%         T1_all{k} = zeros(nb*E,1);
-%         T2_all{k} = zeros(nb*E,1);
         T1_all{k} = zeros(N+1,N+1,E);
         T2_all{k} = zeros(N+1,N+1,E);
         T1_alt_all{k} = zeros(N+1,N+1,E);
@@ -167,17 +159,10 @@ if en_on
                 if ((iy <= N_en_y) || (iy > Ey-N_en_y))
                     Mp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Mp{k}(:,:,i);
                     Sp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Sp{k}(:,:,i);
-%                     T1_all{k}((i-1)*nb+1:i*nb) = T1{k}(:,i);
-%                     T2_all{k}((i-1)*nb+1:i*nb) = T2{k}(:,i);
-%                     T1{k}(:,i) = T1{k}(:,i);
-%                     T2{k}(:,i) = T2{k}(:,i);
                     T1_all{k}(:,:,i) = T1_rs{k}(:,:,i); 
                     T2_all{k}(:,:,i) = T2_rs{k}(:,:,i);
                     T1_alt_all{k}(:,:,i) = T1_alt_rs{k}(:,:,i); 
                     T1_alt2_all{k}(:,:,i) = T1_alt2_rs{k}(:,:,i); 
-                else
-%                     Mp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Mp_alt{k}(:,:,i);
-%                     Sp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Sp_alt{k}(:,:,i);
                 end                
             end
         end
@@ -207,12 +192,7 @@ if en_on
         
         Mp_alt_all{k} = sparse(Mp_alt_all{k});        
         Mp_alt_all_c{k} = R*Q'*apply_en_cont(Mp_alt_all{k},en_b_nodes,psi_p);
-        Mp_alt_all{k} = R*Q'*Mp_alt_all{k}*Q*R';
-        
-%         T1_all{k} = sparse(T1_all{k});
-%         T2_all{k} = sparse(T2_all{k});
-%         T2_all{k} = Q'*T2_all{k};
-   
+        Mp_alt_all{k} = R*Q'*Mp_alt_all{k}*Q*R';   
     end
     
     Mp_uv = zeros(2*nn);
@@ -287,7 +267,6 @@ uv = [u;v];
 
 %%
 uv_ic_check = uv;
-%%+G_uv
 
 %% Setup BC if nonzero
 % u_bc = ones(size(u)).*((Y==1)+(Y==-1));
