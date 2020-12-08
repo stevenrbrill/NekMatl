@@ -122,7 +122,7 @@ M_c = R*Q'*apply_en_cont(Bb,en_b_nodes,psi_p);
 
 %% Form matrices for rans
 
-[dphi_dxi, dphi_deta, dpdx_dpdx, dpdy_dpdy] = get_phi_grads(N1,Dh);
+[dphi_dxi, dphi_deta, dpdx_dpdx, dpdy_dpdy, dpdx_dpdy] = get_phi_grads(N1,Dh);
 [L_x,L_y,J_x,J_y] = dir_jac(E,X,Y);
 w2d = w*w';
 
@@ -136,6 +136,10 @@ for ie=1:E
         end
     end    
 end
+
+A_x = form_Ax(N1,E,w2d,J_x,J,dpdx_dpdx,ones(size(J)));
+A_y = form_Ay(N1,E,w2d,J_y,J,dpdy_dpdy,ones(size(J)));
+A_xy = form_Axy(N1,E,w2d,J_x,J_y,J,dpdx_dpdy,ones(size(J)));
 
 %%
 M_check=full(Bb);

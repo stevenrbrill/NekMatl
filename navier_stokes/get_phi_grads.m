@@ -1,4 +1,4 @@
-function [dphi_dxi, dphi_deta, dpdx_dpdx, dpdy_dpdy] = get_phi_grads(N1,Dh)
+function [dphi_dxi, dphi_deta, dpdx_dpdx, dpdy_dpdy, dpdx_dpdy] = get_phi_grads(N1,Dh)
 
 dphi_dxi = zeros(N1,N1,N1*N1);
 dphi_deta = zeros(N1,N1,N1*N1);
@@ -16,9 +16,11 @@ end
 
 dpdx_dpdx = zeros(N1,N1,N1*N1,N1*N1);
 dpdy_dpdy = zeros(N1,N1,N1*N1,N1*N1);
+dpdx_dpdy = zeros(N1,N1,N1*N1,N1*N1);
 for i=1:N1*N1
     for j=1:N1*N1
         dpdx_dpdx(:,:,i,j) = dphi_dxi(:,:,i).*dphi_dxi(:,:,j);
         dpdy_dpdy(:,:,i,j) = dphi_deta(:,:,i).*dphi_deta(:,:,j);
+        dpdx_dpdy(:,:,i,j) = dphi_dxi(:,:,i).*dphi_deta(:,:,j);
     end
 end   
