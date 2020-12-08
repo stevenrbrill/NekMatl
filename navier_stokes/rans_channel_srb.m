@@ -121,43 +121,11 @@ M_c = R*Q'*apply_en_cont(Bb,en_b_nodes,psi_p);
 
 
 %% Form matrices for rans
-dphi_dxi = zeros(N1,N1,N1*N1);
-dphi_deta = zeros(N1,N1,N1*N1);
-ind=1;
-for i=1:N1
-    for j=1:N1
-        x=zeros(N1);
-        x(j,i)=1;
-        
-        dphi_dxi(:,:,ind) = Dh*x;
-        dphi_deta(:,:,ind) = x*Dh';
-        ind = ind +1;
-    end
-end
 
-L_x = zeros(E,1);
-L_y = zeros(E,1);
-for ie=1:E
-    X_min = min(min(X(:,:,ie)));
-    X_max = max(max(X(:,:,ie)));
-    Y_min = min(min(Y(:,:,ie)));
-    Y_max = max(max(Y(:,:,ie)));
-    L_x(ie) = X_max-X_min;
-    L_y(ie) = Y_max-Y_min; 
-end
-J_x = 2./L_x;
-J_y = 2./L_y;
-
-dpdx_dpdx = zeros(N1,N1,N1*N1,N1*N1);
-dpdy_dpdy = zeros(N1,N1,N1*N1,N1*N1);
-    for i=1:N1*N1
-        for j=1:N1*N1
-            dpdx_dpdx(:,:,i,j) = dphi_dxi(:,:,i).*dphi_dxi(:,:,j);
-            dpdy_dpdy(:,:,i,j) = dphi_deta(:,:,i).*dphi_deta(:,:,j);
-        end
-    end   
-
+[dphi_dxi, dphi_deta, dpdx_dpdx, dpdy_dpdy] = get_phi_grads(N1,Dh);
+[L_x,L_y,J_x,J_y] = dir_jac(E,X,Y);
 w2d = w*w';
+
 myA = zeros(N1*N1*E);
 for ie=1:E
     for i=1:N1*N1
