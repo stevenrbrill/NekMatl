@@ -22,16 +22,16 @@ Re = 1; Pr=0.8; Pe=Re*Pr;
 dpdx = 1;
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=3; % polynomial order  
+N=4; % polynomial order  
 Ex=1; % Number of elements in x
 Ey=3; % Number of elements in y
 CFL=0.025;
 u_ic = Re;
-pert = 0.1;
+pert = 0.0;
 f_ic = @(x,y) u_ic*(1-y.^8)/2;
 
 %% Enrichment information
-en_on = 0;
+en_on = 0; % 0 = no enrichment, 1 = implicit, 2 = explicit
 N_en_y = 1; 
 en_mag = 1;
 psi = {@(x,y) en_mag*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
@@ -208,9 +208,11 @@ if en_on
         end
         %%
         Mp_all{k} = sparse(Mp_all{k});        
+        Mp_full{k} = Mp_all{k};
         Mp_all_c{k} = R*Q'*apply_en_cont(Mp_all{k},en_b_nodes,psi_p);
         Mp_all{k} = R*Q'*Mp_all{k}*Q*R';
         Sp_all{k} = sparse(Sp_all{k});
+        Sp_full{k} = Sp_all{k};
         Sp_all_c{k} = R*Q'*apply_en_cont(Sp_all{k},en_b_nodes,psi_p);
         Sp_all{k} = R*Q'*Sp_all{k}*Q*R';
         
@@ -325,6 +327,10 @@ for step=1:nstep
             
             H_uv = (Ma_uv + (A_uv)*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
             H_c = (M_c + (A_c)*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
+            if en_on == 2
+                H_uv = (Ma_uv + (A_uv)*dt/(b0*Re)); % + dt/b0*(Mp_uv + Sp_uv));
+                H_c = (M_c + (A_c)*dt/(b0*Re)); % + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
+            end
             H_q = full(H_uv);
             rhs_c = (H_c);
             [LH_uv,UH_uv]=lu(H_uv);
@@ -354,6 +360,17 @@ for step=1:nstep
 
     fx1 = -convl(u,RX,Dh,u,v) + F; % du = Cu  
     fy1 = -convl(v,RX,Dh,u,v); % dv = Cv
+    
+    if en_on == 2
+        en_u = dt/b0*Sp_full{1}*reshape(u,nL,1);
+        en_u = reshape(en_u,N1,N1,E);
+        en_v = dt/b0*Mp_full{2}*reshape(v,nL,1);
+        en_v = reshape(en_v,N1,N1,E);
+        
+        fx1 = fx1 - en_u;
+        fy1 = fy1 - en_v;
+    end
+    
     
     %%
 
