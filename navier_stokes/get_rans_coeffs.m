@@ -1,4 +1,5 @@
-function [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg] = get_rans_coeffs(rho,mu,k,omg)
+function [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg] ...
+        = get_rans_coeffs(rho,mu,k,omg)
 
     sigma_k = 2;
     sigma_omg = 2;
@@ -37,7 +38,7 @@ function [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg] = get_rans_coeffs(rh
     gam_k = mu + mu_t./sigma_k;
     gam_omg = mu + mu_t./sigma_omg;
     G_k = mu_t.*S2;
-    G_omg = alpha*omg./k.*G_k;
+    G_omg = alpha.*omg./k.*G_k;
     Y_k = rho.*beta_star.*k.*omg;
     Y_omg = rho.*beta.*f_beta.*omg.^2;
     S_k = 0.*k;

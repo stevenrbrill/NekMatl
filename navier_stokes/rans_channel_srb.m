@@ -18,11 +18,13 @@ pointstyles = {'ko','bo','ro','go','co','mo','k^','b^','r^','g^','c^','m^','ks',
 
 format compact;
 format short; 
-Re = 1; Pr=0.8; Pe=Re*Pr; 
+mu = 1;
+rho = 1;
+Re = rho/mu; 
 dpdx = 1;
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=4; % polynomial order  
+N=2; % polynomial order  
 Ex=1; % Number of elements in x
 Ey=3; % Number of elements in y
 CFL=0.1;
@@ -301,6 +303,17 @@ uv_ic_check = uv;
 % u_bc = reshape(ML.*u_bc,nL,1);
 % u_bc = Bb\(Q'*u_bc);
 
+k_bc_val = 10^(-8);
+k_bc = k_bc_val.*ones(size(k));
+k_bc = reshape(ML.*k_bc,nL,1);
+k_bc = (Q'*Bb*Q)\(Q'*k_bc);
+
+omg_bc_val = 100*k_bc_val;
+omg_bc = omg_bc_val.*ones(size(omg));
+omg_bc = reshape(ML.*omg_bc,nL,1);
+omg_bc = (Q'*Bb*Q)\(Q'*omg_bc);
+
+
 %%
 disp("Timestepping")
 plot1 = 1;
@@ -348,7 +361,9 @@ for step=1:nstep
             [LH_uv,UH_uv]=lu(H_uv);
             
             H_k=H;
+            H_k_bar = (Q'*Bb*Q+ Ab*dt/(b0*Re));
             H_omg=H;
+            H_omg_bar = (Q'*Bb*Q+ Ab*dt/(b0*Re));
             [LH_k,UH_k]=lu(H_k);
             [LH_omg,UH_omg]=lu(H_omg);
 %             Hbar=(Bb+ Ab*dt/(b0*Re));
@@ -356,6 +371,10 @@ for step=1:nstep
         
         b0i=1./b0;
     end % Viscous op
+    
+    %% Get rans values
+    [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg] ...
+        = get_rans_coeffs(rho,mu,k,omg);
  
     %% uv version
     
@@ -363,8 +382,8 @@ for step=1:nstep
 
     fx1 = -convl(u,RX,Dh,u,v) + F; % du = Cu  
     fy1 = -convl(v,RX,Dh,u,v); % dv = Cv
-    fk1 = -convl(k,RX,Dh,u,v); % dk = Ck
-    fomg1 = -convl(omg,RX,Dh,u,v); % domg = Comg
+    fk1 = -convl(k,RX,Dh,u,v) + G_k - Y_k + S_k; % dk = Ck
+    fomg1 = -convl(omg,RX,Dh,u,v) + G_omg - Y_omg + S_omg; % domg = Comg
     
     %%
 
@@ -399,8 +418,8 @@ for step=1:nstep
 %     u=R*(Q'*reshape(ML.*uL,nL,1)-Hbar*u_bc);
     u_rhs=R*(Q'*reshape(ML.*uL,nL,1));
     v_rhs=R*(Q'*reshape(ML.*vL,nL,1));
-    k_rhs=R*(Q'*reshape(ML.*k,nL,1));
-    omg_rhs=R*(Q'*reshape(ML.*omg,nL,1));
+    k_rhs=R*(Q'*reshape(ML.*k,nL,1)-H_k_bar*k_bc);
+    omg_rhs=R*(Q'*reshape(ML.*omg,nL,1)-H_omg_bar*omg_bc);
     
     u_rhs = u_rhs + T1_rhs;
     
@@ -420,9 +439,9 @@ for step=1:nstep
     v=Q*(R'*v);
     v=reshape(v,N1,N1,E);
     
-    k=Q*(R'*k);
+    k=Q*(R'*k+k_bc);
     k=reshape(k,N1,N1,E);
-    omg=Q*(R'*omg);
+    omg=Q*(R'*omg+omg_bc);
     omg=reshape(omg,N1,N1,E);
     
     
