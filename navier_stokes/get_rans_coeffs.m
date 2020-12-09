@@ -1,5 +1,5 @@
 function [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg] ...
-        = get_rans_coeffs(rho,mu,k,omg)
+        = get_rans_coeffs(rho,mu,k,omg,SS,OS,dkdx,dkdy,domgdx,domgdy)
 
     sigma_k = 2;
     sigma_omg = 2;
@@ -22,11 +22,19 @@ function [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg] ...
     alpha = alpha_inf./alpha_star.*(alpha_0+Re_t./R_omg)./(1+Re_t./R_omg);
         
     
-    xk = 0.*k; %1./(omg.^3).*grad_k.*grad_omg; % TODO: Check this
+    xk = 1./(omg.^3).*(dkdx.*domgdx+dkdy.*domgdy); 
     f_beta_star = 1.*(xk < 0) + (1+680*xk.^2)./(1+400*xk.^2).*(xk>0);
     
-    x_omg = 0.*k; % TODO: Add this. it's complicated
-    S2 = 0.*k; % TODO: Add this.
+    x_omg = 0.*k; 
+    for i=1:2
+        for j=1:2
+            for ik=1:2
+                x_omg = x_omg + OS(:,:,:,i,j).*OS(:,:,:,j,ik).*SS(:,:,:,ik,i);
+            end
+        end
+    end
+    x_omg = abs(x_omg./(beta_inf_star.*omg).^3);
+    S2 = 2*(SS(:,:,:,1,1).^2+SS(:,:,:,1,2).^2+SS(:,:,:,2,1).^2+SS(:,:,:,2,2).^2); 
     
     f_beta = (1+70*x_omg)./(1+80*x_omg);
     beta = beta_0.*f_beta;

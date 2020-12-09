@@ -22,6 +22,8 @@ mu = 1;
 rho = 1;
 Re = rho/mu; 
 dpdx = 1;
+k_bc_val = 10^(-8);
+omg_bc_val = 100*k_bc_val;
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
 N=2; % polynomial order  
@@ -29,7 +31,7 @@ Ex=1; % Number of elements in x
 Ey=3; % Number of elements in y
 CFL=0.1;
 u_ic = Re;
-pert = 0.1;
+pert = 0.0;
 f_ic = @(x,y) u_ic*(1-y.^8)/2;
 
 %% Enrichment information
@@ -122,17 +124,20 @@ M_c = R*Q'*apply_en_cont(Bb,en_b_nodes,psi_p);
 
 %% Form matrices for rans
 
-[dphi_dxi, dphi_deta, dpdx_dpdx, dpdy_dpdy, dpdx_dpdy] = get_phi_grads(N1,Dh);
 [L_x,L_y,J_x,J_y] = dir_jac(E,X,Y);
 w2d = w*w';
+[dphi_dxi, dphi_deta, dphi_dx, dphi_dy, dpdx_dpdx, dpdy_dpdy, dpdx_dpdy] ...
+    = get_phi_grads(N1,Dh,E,J_x,J_y);
+dphi_dx_flat = reshape(dphi_dx,N1*N1,N1*N1,E);
+dphi_dy_flat = reshape(dphi_dy,N1*N1,N1*N1,E);
 
 myA = zeros(N1*N1*E);
 for ie=1:E
     for i=1:N1*N1
         for j=1:N1*N1
             myA((ie-1)*N1*N1+i,(ie-1)*N1*N1+j) = ... 
-                sum(J_x(ie)*J_x(ie)*J(:,:,ie).*w2d.*dpdx_dpdx(:,:,i,j) ...
-               + J_y(ie)*J_y(ie)*J(:,:,ie).*w2d.*dpdy_dpdy(:,:,i,j),'All');           
+                sum(J(:,:,ie).*w2d.*dpdx_dpdx(:,:,i,j,ie) ...
+               + J(:,:,ie).*w2d.*dpdy_dpdy(:,:,i,j,ie),'All');           
         end
     end    
 end
@@ -140,6 +145,18 @@ end
 A_x = form_Ax(N1,E,w2d,J_x,J,dpdx_dpdx,ones(size(J)));
 A_y = form_Ay(N1,E,w2d,J_y,J,dpdy_dpdy,ones(size(J)));
 A_xy = form_Axy(N1,E,w2d,J_x,J_y,J,dpdx_dpdy,ones(size(J)));
+
+
+SS = zeros(N1,N1,E,2,2);
+OS = zeros(N1,N1,E,2,2);
+dudx = zeros(N1,N1,E);
+dudy = zeros(N1,N1,E);
+dvdx = zeros(N1,N1,E);
+dvdy = zeros(N1,N1,E);
+dkdx = zeros(N1,N1,E);
+dkdy = zeros(N1,N1,E);
+domgdx = zeros(N1,N1,E);
+domgdy = zeros(N1,N1,E);
 
 %%
 M_check=full(Bb);
@@ -285,8 +302,8 @@ disp("Setting Initial Conditions")
 % Initial conditions
 u=u_ic*ones(size(ML)); 
 v=0*ML;
-k=0*ML;
-omg=0*ML;
+k=k_bc_val*ones(size(ML));
+omg=omg_bc_val*ones(size(ML));
 
 for e = 1:E
     for i = 1:N+1
@@ -324,12 +341,10 @@ uv_ic_check = uv;
 % u_bc = reshape(ML.*u_bc,nL,1);
 % u_bc = Bb\(Q'*u_bc);
 
-k_bc_val = 10^(-8);
 k_bc = k_bc_val.*ones(size(k));
 k_bc = reshape(ML.*k_bc,nL,1);
 k_bc = (Q'*Bb*Q)\(Q'*k_bc);
 
-omg_bc_val = 100*k_bc_val;
 omg_bc = omg_bc_val.*ones(size(omg));
 omg_bc = reshape(ML.*omg_bc,nL,1);
 omg_bc = (Q'*Bb*Q)\(Q'*omg_bc);
@@ -346,11 +361,46 @@ plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
 % psi_c(1:psi_len/2) = -1*ones(psi_len/2,1)*psi_p;
 % psi_c(psi_len/2+1:psi_len) = 1*ones(psi_len/2,1)*psi_p;
 for step=1:nstep
+    %% Form S
+    u_flat = reshape(u,N1*N1,E);
+    v_flat = reshape(v,N1*N1,E);
+    k_flat = reshape(k,N1*N1,E);
+    omg_flat = reshape(omg,N1*N1,E);
+
+    
+    for ie = 1:E
+        dudx(:,:,ie) = reshape(dphi_dx_flat(:,:,ie)*u_flat(:,ie),N1,N1);
+        dvdx(:,:,ie) = reshape(dphi_dx_flat(:,:,ie)*v_flat(:,ie),N1,N1);
+        dudy(:,:,ie) = reshape(dphi_dy_flat(:,:,ie)*u_flat(:,ie),N1,N1);
+        dvdy(:,:,ie) = reshape(dphi_dy_flat(:,:,ie)*v_flat(:,ie),N1,N1);
+        dkdx(:,:,ie) = reshape(dphi_dx_flat(:,:,ie)*k_flat(:,ie),N1,N1);
+        dkdy(:,:,ie) = reshape(dphi_dy_flat(:,:,ie)*k_flat(:,ie),N1,N1);
+        domgdx(:,:,ie) = reshape(dphi_dx_flat(:,:,ie)*omg_flat(:,ie),N1,N1);
+        domgdy(:,:,ie) = reshape(dphi_dy_flat(:,:,ie)*omg_flat(:,ie),N1,N1);
+    end
+    SS(:,:,:,1,1) = 1/2*(dudx+dudx);
+    SS(:,:,:,1,2) = 1/2*(dudy+dvdx);
+    SS(:,:,:,2,1) = 1/2*(dudy+dvdx);
+    SS(:,:,:,2,2) = 1/2*(dvdy+dvdy);
+    OS(:,:,:,1,1) = 1/2*(dudx-dudx);
+    OS(:,:,:,1,2) = 1/2*(dudy-dvdx);
+    OS(:,:,:,2,1) = 1/2*(dvdx-dudy);
+    OS(:,:,:,2,2) = 1/2*(dvdy-dvdy);
+    
+
+    %% Get rans values
+    [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg] ...
+        = get_rans_coeffs(rho,mu,k,omg,SS,OS,dkdx,dkdy,domgdx,domgdy);
+    Re_t = rho./mu_t;
+    Re_comb = rho./(mu+mu_t);
+    Re_k = rho./gam_k;
+    Re_omg = rho./gam_omg;
+    %% Timestepping
     time=step*dt;
     if step==1; b0=1.0;    b= [ -1 0 0 ]';       a=[ 1  0 0 ]'; end
     if step==2; b0=1.5;    b=([ -4 1 0 ]')./2;   a=[ 2 -1 0 ]'; end
     if step==3; b0=11./6.; b=([ -18 9 -2 ]')./6; a=[ 3 -3 1 ]'; end
-    if step<=3
+%     if step>=3
         if en_on
             H_x=(Ma + A*dt/(b0*Re) + dt/b0*(Mp_all{1} + Sp_all{1}));
             H_y=(Ma + A*dt/(b0*Re));
@@ -367,35 +417,53 @@ for step=1:nstep
             rhs_c = (H_c);
             [LH_uv,UH_uv]=lu(H_uv);
         else
-            H=(Ma + A*dt/(b0*Re));
-            [LH_x,UH_x]=lu(H);
-            LH_y = LH_x;
-            UH_y = UH_x;
+%             H=(Ma + A*dt/(b0*Re));
+%             [LH_x,UH_x]=lu(H);
+%             LH_y = LH_x;
+%             UH_y = UH_x;
 
             terms_x = zeros(N+1,N+1,E);
             terms_y = zeros(N+1,N+1,E);
             T1_rhs = 0;
             
-            H_uv = (Ma_uv + (A_uv)*dt/(b0*Re));
+            A_x = R*Q'*form_Ax(N1,E,w2d,J_x,J,dpdx_dpdx,Re_comb)*Q*R';
+            A_y = R*Q'*form_Ay(N1,E,w2d,J_y,J,dpdy_dpdy,Re_comb)*Q*R';
+            A_xy = R*Q'*form_Axy(N1,E,w2d,J_x,J_y,J,dpdx_dpdy,Re_comb)*Q*R';
+            A_uv = zeros(2*nn);
+            A_uv(1:nn,1:nn) = 2*A_x+A_y+A_xy;
+            A_uv(nn+1:2*nn,nn+1:2*nn) = A_x+2*A_y+A_xy';
+            A_uv = sparse(A_uv);
+            
+            H_uv = (Ma_uv + (A_uv)*dt/(b0));
             H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re)); 
             rhs_c = zeros(size(Ma(:,1)));
             [LH_uv,UH_uv]=lu(H_uv);
             
-            H_k=H;
-            H_k_bar = (Q'*Bb*Q+ Ab*dt/(b0*Re));
-            H_omg=H;
-            H_omg_bar = (Q'*Bb*Q+ Ab*dt/(b0*Re));
+            
+            A_x_k = form_Ax(N1,E,w2d,J_x,J,dpdx_dpdx,Re_k);
+            A_y_k = form_Ay(N1,E,w2d,J_y,J,dpdy_dpdy,Re_k);
+            A_k = R*Q'*(A_x_k + A_y_k)*Q*R';
+            Ab_k = Q'*(A_x_k + A_y_k)*Q;
+            H_k=(Ma+A_k*dt/(b0));
+            H_k_bar = (Q'*Bb*Q+ Ab_k*dt/(b0));
+            
+            A_x_omg = form_Ax(N1,E,w2d,J_x,J,dpdx_dpdx,Re_omg);
+            A_y_omg = form_Ay(N1,E,w2d,J_y,J,dpdy_dpdy,Re_omg);
+            A_omg = R*Q'*(A_x_omg + A_y_omg)*Q*R';
+            Ab_omg = Q'*(A_x_omg + A_y_omg)*Q;
+            H_omg=(Ma+A_omg*dt/(b0));
+            H_omg_bar = (Q'*Bb*Q+ Ab_omg*dt/(b0));
+            
             [LH_k,UH_k]=lu(H_k);
             [LH_omg,UH_omg]=lu(H_omg);
 %             Hbar=(Bb+ Ab*dt/(b0*Re));
         end
         
         b0i=1./b0;
-    end % Viscous op
+%     end % Viscous op
     
-    %% Get rans values
-    [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg] ...
-        = get_rans_coeffs(rho,mu,k,omg);
+
+    
  
     %% uv version
     

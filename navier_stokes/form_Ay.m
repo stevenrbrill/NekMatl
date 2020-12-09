@@ -5,7 +5,7 @@ for ie=1:E
     for i=1:N1*N1
         for j=1:N1*N1
             A_y((ie-1)*N1*N1+i,(ie-1)*N1*N1+j) = ... 
-                sum(J_y(ie)*J_y(ie)*J(:,:,ie).*1./Re(:,:,ie).*w2d.*dpdy_dpdy(:,:,i,j),'All');           
+                sum(J(:,:,ie).*1./Re(:,:,ie).*w2d.*dpdy_dpdy(:,:,i,j,ie),'All');           
         end
     end    
 end
