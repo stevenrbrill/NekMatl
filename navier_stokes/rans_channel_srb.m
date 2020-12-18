@@ -435,10 +435,11 @@ for step=1:nstep
             terms_x = zeros(N+1,N+1,E);
             terms_y = zeros(N+1,N+1,E);
             T1_rhs = 0;
-            
-            A_x = R*Q'*form_Ax(N1,E,w2d,J_x,J,dpdx_dpdx,Re_comb)*Q*R';
-            A_y = R*Q'*form_Ay(N1,E,w2d,J_y,J,dpdy_dpdy,Re_comb)*Q*R';
-            A_xy = R*Q'*form_Axy(N1,E,w2d,J_x,J_y,J,dpdx_dpdy,Re_comb)*Q*R';
+
+            [A_x_full,A_y_full,A_xy_full] = form_Ax_Ay_Axy(N1,E,w2d,J_x,J_y,J,dpdx_dpdx,dpdy_dpdy,dpdx_dpdy,Re_comb);
+            A_x = R*Q'*A_x_full*Q*R';
+            A_y = R*Q'*A_y_full*Q*R';
+            A_xy = R*Q'*A_xy_full*Q*R';
             A_uv = zeros(2*nn);
             A_uv(1:nn,1:nn) = 2*A_x+A_y+A_xy;
             A_uv(nn+1:2*nn,nn+1:2*nn) = A_x+2*A_y+A_xy';
@@ -450,15 +451,13 @@ for step=1:nstep
             [LH_uv,UH_uv]=lu(H_uv);
             
             if rans_on
-                A_x_k = form_Ax(N1,E,w2d,J_x,J,dpdx_dpdx,Re_k);
-                A_y_k = form_Ay(N1,E,w2d,J_y,J,dpdy_dpdy,Re_k);
+                [A_x_k,A_y_k] = form_Ax_Ay(N1,E,w2d,J_x,J_y,J,dpdx_dpdx,dpdy_dpdy,Re_k);
                 A_k = R*Q'*(A_x_k + A_y_k)*Q*R';
                 Ab_k = Q'*(A_x_k + A_y_k)*Q;
                 H_k=(Ma+A_k*dt/(b0));
                 H_k_bar = (Q'*Bb*Q+ Ab_k*dt/(b0));
                 
-                A_x_omg = form_Ax(N1,E,w2d,J_x,J,dpdx_dpdx,Re_omg);
-                A_y_omg = form_Ay(N1,E,w2d,J_y,J,dpdy_dpdy,Re_omg);
+                [A_x_omg,A_y_omg] = form_Ax_Ay(N1,E,w2d,J_x,J_y,J,dpdx_dpdx,dpdy_dpdy,Re_omg);
                 A_omg = R*Q'*(A_x_omg + A_y_omg)*Q*R';
                 Ab_omg = Q'*(A_x_omg + A_y_omg)*Q;
                 H_omg=(Ma+A_omg*dt/(b0));
