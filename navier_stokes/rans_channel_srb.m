@@ -32,7 +32,9 @@ Ey=3; % Number of elements in y
 CFL=0.1;
 u_ic = Re;
 pert = 0.0;
-f_ic = @(x,y) u_ic*(1-y.^8)/2;
+f_ic = @(x,y) u_ic*(1-y.^4)/2;
+
+rans_on = 1;
 
 %% Enrichment information
 en_on = 0;
@@ -320,7 +322,7 @@ for e = 1:E
     end
 end
 
-% u_tau = 1;
+u_tau = 1;
 % % u_tau = sqrt(0.316./(Re.^0.25)/8);
 Yp = (1-abs(Y))*u_tau/(mu/rho);
 sigma = 0.6;
@@ -447,23 +449,24 @@ for step=1:nstep
             rhs_c = zeros(size(Ma(:,1)));
             [LH_uv,UH_uv]=lu(H_uv);
             
-            
-            A_x_k = form_Ax(N1,E,w2d,J_x,J,dpdx_dpdx,Re_k);
-            A_y_k = form_Ay(N1,E,w2d,J_y,J,dpdy_dpdy,Re_k);
-            A_k = R*Q'*(A_x_k + A_y_k)*Q*R';
-            Ab_k = Q'*(A_x_k + A_y_k)*Q;
-            H_k=(Ma+A_k*dt/(b0));
-            H_k_bar = (Q'*Bb*Q+ Ab_k*dt/(b0));
-            
-            A_x_omg = form_Ax(N1,E,w2d,J_x,J,dpdx_dpdx,Re_omg);
-            A_y_omg = form_Ay(N1,E,w2d,J_y,J,dpdy_dpdy,Re_omg);
-            A_omg = R*Q'*(A_x_omg + A_y_omg)*Q*R';
-            Ab_omg = Q'*(A_x_omg + A_y_omg)*Q;
-            H_omg=(Ma+A_omg*dt/(b0));
-            H_omg_bar = (Q'*Bb*Q+ Ab_omg*dt/(b0));
-            
-            [LH_k,UH_k]=lu(H_k);
-            [LH_omg,UH_omg]=lu(H_omg);
+            if rans_on
+                A_x_k = form_Ax(N1,E,w2d,J_x,J,dpdx_dpdx,Re_k);
+                A_y_k = form_Ay(N1,E,w2d,J_y,J,dpdy_dpdy,Re_k);
+                A_k = R*Q'*(A_x_k + A_y_k)*Q*R';
+                Ab_k = Q'*(A_x_k + A_y_k)*Q;
+                H_k=(Ma+A_k*dt/(b0));
+                H_k_bar = (Q'*Bb*Q+ Ab_k*dt/(b0));
+                
+                A_x_omg = form_Ax(N1,E,w2d,J_x,J,dpdx_dpdx,Re_omg);
+                A_y_omg = form_Ay(N1,E,w2d,J_y,J,dpdy_dpdy,Re_omg);
+                A_omg = R*Q'*(A_x_omg + A_y_omg)*Q*R';
+                Ab_omg = Q'*(A_x_omg + A_y_omg)*Q;
+                H_omg=(Ma+A_omg*dt/(b0));
+                H_omg_bar = (Q'*Bb*Q+ Ab_omg*dt/(b0));
+                
+                [LH_k,UH_k]=lu(H_k);
+                [LH_omg,UH_omg]=lu(H_omg);
+            end
 %             Hbar=(Bb+ Ab*dt/(b0*Re));
         end
         
@@ -515,8 +518,11 @@ for step=1:nstep
 %     u=R*(Q'*reshape(ML.*uL,nL,1)-Hbar*u_bc);
     u_rhs=R*(Q'*reshape(ML.*uL,nL,1));
     v_rhs=R*(Q'*reshape(ML.*vL,nL,1));
-    k_rhs=R*(Q'*reshape(ML.*k,nL,1)-H_k_bar*k_bc);
-    omg_rhs=R*(Q'*reshape(ML.*omg,nL,1)-H_omg_bar*omg_bc);
+    
+    if rans_on
+        k_rhs=R*(Q'*reshape(ML.*k,nL,1)-H_k_bar*k_bc);
+        omg_rhs=R*(Q'*reshape(ML.*omg,nL,1)-H_omg_bar*omg_bc);
+    end
     
     u_rhs = u_rhs + T1_rhs;
     
@@ -524,8 +530,12 @@ for step=1:nstep
     
     uv = [u_rhs+rhs_c;v_rhs];
     uv=UH_uv\(LH_uv\uv);
-    k = UH_k\(LH_k\k_rhs);
-    omg = UH_omg\(LH_omg\omg_rhs);
+ 
+    if rans_on
+        k = UH_k\(LH_k\k_rhs);
+        omg = UH_omg\(LH_omg\omg_rhs);
+    end
+    
     u = uv(1:nn);
     v = uv(nn+1:2*nn);
     u=Q*(R'*u);
