@@ -22,8 +22,8 @@ mu = 1;
 rho = 1;
 Re = rho/mu; 
 dpdx = 1;
-k_bc_val = 10^(-8);
-omg_bc_val = 100*k_bc_val;
+k_bc_val = 0;
+omg_bc_val = 1*k_bc_val;
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
 N=2; % polynomial order  
@@ -401,8 +401,8 @@ for step=1:nstep
     %% Get rans values
     [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg] ...
         = get_rans_coeffs(rho,mu,k,omg,SS,OS,dkdx,dkdy,domgdx,domgdy);
-    Re_t = rho./mu_t;
-    Re_comb = rho./(mu*ones(size(mu_t))+mu_t);
+    Re_t = rho./(mu_t+eps);
+    Re_comb = rho./(mu*ones(size(mu_t))+mu_t*rans_on);
     Re_k = rho./gam_k;
     Re_omg = rho./gam_omg;
     %% Timestepping
