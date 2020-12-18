@@ -320,6 +320,14 @@ for e = 1:E
     end
 end
 
+% u_tau = 1;
+% % u_tau = sqrt(0.316./(Re.^0.25)/8);
+Yp = (1-abs(Y))*u_tau/(mu/rho);
+sigma = 0.6;
+fact = exp((-(log10(Yp)-1).^2)./(2*sigma.^2));
+k = k_bc_val + 4.5*u_tau*u_tau*fact;
+omg = omg_bc_val + 0.5*Re*u_tau*u_tau*fact;
+
 % u = apply_en_cont_soln(u,en_b_nodes,psi_p);
 u1=u; u2=u; u3=u; fx3=u; fx2=u; fx1=u;
 v1=v; v2=v; v3=v; fy3=v; fy2=v; fy1=v;
