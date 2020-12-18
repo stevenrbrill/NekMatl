@@ -400,7 +400,7 @@ for step=1:nstep
     [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg] ...
         = get_rans_coeffs(rho,mu,k,omg,SS,OS,dkdx,dkdy,domgdx,domgdy);
     Re_t = rho./mu_t;
-    Re_comb = rho./(mu+mu_t);
+    Re_comb = rho./(mu*ones(size(mu_t))+mu_t);
     Re_k = rho./gam_k;
     Re_omg = rho./gam_omg;
     %% Timestepping
