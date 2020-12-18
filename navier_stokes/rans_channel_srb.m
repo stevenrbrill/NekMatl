@@ -36,6 +36,12 @@ f_ic = @(x,y) u_ic*(1-y.^4)/2;
 
 rans_on = 1;
 
+
+soln_dir = "test";
+save_soln = 1;
+plot_int = 100;
+save_soln_int = 500;
+
 %% Enrichment information
 en_on = 0;
 N_en_y = 1; 
@@ -365,6 +371,9 @@ disp("Timestepping")
 plot1 = 1;
 time = 0;
 plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
+if save_soln
+    mkdir(soln_dir);
+end
 %%
 % psi_len = length(M_c);
 % psi_c = zeros(psi_len,1);
@@ -545,18 +554,21 @@ for step=1:nstep
     v=Q*(R'*v);
     v=reshape(v,N1,N1,E);
     
-    k=Q*(R'*k+k_bc);
-    k=reshape(k,N1,N1,E);
-    omg=Q*(R'*omg+omg_bc);
-    omg=reshape(omg,N1,N1,E);
+    
+    if rans_on
+        k=Q*(R'*k+k_bc);
+        k=reshape(k,N1,N1,E);
+        omg=Q*(R'*omg+omg_bc);
+        omg=reshape(omg,N1,N1,E);
+    end
     
     
 %% Output
-    if mod(step,100)==0
+    if mod(step,plot_int)==0
         plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
-        if mod(step,5000)==0
-            fname = strcat("soln_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ex),"_step_",num2str(step),".mat");
-            save(fname,"u","v","pr","psi","gpsi","hpsi","N","Ex","Ey","en_on","time","psi_xy","N_en_y","w","X","Y","Ys","Re","pert");
+        if mod(step,save_soln_int)==0 && save_soln
+            fname = strcat(soln_dir,"/soln_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ey),"_step_",num2str(step),".mat");
+            save(fname,"u","v","pr","psi","gpsi","hpsi","N","Ex","Ey","en_on","time","psi_xy","N_en_y","w","X","Y","Ys","Re","pert","k","omg","mu_t","k_bc","omg_bc","rho");
         end
     end
 
