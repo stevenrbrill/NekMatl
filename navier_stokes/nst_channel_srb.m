@@ -18,14 +18,14 @@ pointstyles = {'ko','bo','ro','go','co','mo','k^','b^','r^','g^','c^','m^','ks',
 
 format compact;
 format short; 
-Re = 1; Pr=0.8; Pe=Re*Pr; 
+Re = 10; Pr=0.8; Pe=Re*Pr; 
 dpdx = 1;
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
 N=4; % polynomial order  
 Ex=1; % Number of elements in x
 Ey=3; % Number of elements in y
-CFL=0.025;
+CFL=0.1;
 u_ic = Re;
 pert = 0.0;
 f_ic = @(x,y) u_ic*(1-y.^8)/2;
@@ -419,10 +419,10 @@ for step=1:nstep
 %% Output
     if mod(step,100)==0
         plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
-        if mod(step,5000)==0
-            fname = strcat("soln_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ex),"_step_",num2str(step),".mat");
-            save(fname,"u","v","pr","psi","gpsi","hpsi","N","Ex","Ey","en_on","time","psi_xy","N_en_y","w","X","Y","Ys","Re","pert");
-        end
+%         if mod(step,5000)==0
+%             fname = strcat("soln_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ex),"_step_",num2str(step),".mat");
+%             save(fname,"u","v","pr","psi","gpsi","hpsi","N","Ex","Ey","en_on","time","psi_xy","N_en_y","w","X","Y","Ys","Re","pert");
+%         end
     end
 
 end
