@@ -18,7 +18,7 @@ pointstyles = {'ko','bo','ro','go','co','mo','k^','b^','r^','g^','c^','m^','ks',
 
 format compact;
 format short; 
-mu = 1;
+mu = 1/395;
 rho = 1;
 Re = rho/mu; 
 dpdx = 1;
@@ -26,13 +26,13 @@ k_bc_val = 0;
 omg_bc_val = 1*k_bc_val;
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=2; % polynomial order  
+N=5; % polynomial order  
 Ex=1; % Number of elements in x
-Ey=3; % Number of elements in y
+Ey=7; % Number of elements in y
 CFL=0.1;
 u_ic = Re;
 pert = 0.0;
-f_ic = @(x,y) u_ic*(1-y.^4)/2;
+f_ic = @(x,y) 3/2*(1-y.^2);
 
 rans_on = 1;
 
@@ -52,12 +52,12 @@ gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1.*y + 0.*x), ...
 hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
     
-    psi = {@(x,y) (0.5*(1 - y.^4) + 0.*x), @(x,y) 0.*y + 0.*x};
-gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-2.*y.^3 + 0.*x), ...
-        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-6.*y.^2 + 0.*x), ...
-        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-   
+% psi = {@(x,y) (0.5*(1 - y.^4) + 0.*x), @(x,y) 0.*y + 0.*x};
+% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-2.*y.^3 + 0.*x), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-6.*y.^2 + 0.*x), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+%    
 
     
 % Law of the wall
@@ -328,12 +328,15 @@ for e = 1:E
     end
 end
 
-u_tau = 1;
-% % u_tau = sqrt(0.316./(Re.^0.25)/8);
-Yp = (1-abs(Y))*u_tau/(mu/rho);
+% u_tau = 1;
+u_tau = sqrt(0.316./(Re.^0.25)/8);
+Yp = max((1-abs(Y))*u_tau*Re,1e-3);
 sigma = 0.6;
 fact = exp((-(log10(Yp)-1).^2)./(2*sigma.^2));
 k = k_bc_val + 4.5*u_tau*u_tau*fact;
+
+eps_s = 3;
+omg_bc_val = 40000*u_tau.^2/(mu*eps_s.^2);
 omg = omg_bc_val + 0.5*Re*u_tau*u_tau*fact;
 
 % u = apply_en_cont_soln(u,en_b_nodes,psi_p);
