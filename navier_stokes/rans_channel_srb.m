@@ -402,7 +402,7 @@ for step=1:nstep
     end
     SS(:,:,:,1,1) = 1/2*(dudx+dudx);
     SS(:,:,:,1,2) = 1/2*(dudy+dvdx);
-    SS(:,:,:,2,1) = 1/2*(dudy+dvdx);
+    SS(:,:,:,2,1) = 1/2*(dvdx+dudy);
     SS(:,:,:,2,2) = 1/2*(dvdy+dvdy);
     OS(:,:,:,1,1) = 1/2*(dudx-dudx);
     OS(:,:,:,1,2) = 1/2*(dudy-dvdx);
