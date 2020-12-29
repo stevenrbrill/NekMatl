@@ -28,7 +28,7 @@ omg_bc_val = 1*k_bc_val;
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
 N=5; % polynomial order  
 Ex=1; % Number of elements in x
-Ey=7; % Number of elements in y
+Ey=14; % Number of elements in y
 CFL=0.1;
 u_ic = Re;
 pert = 0.0;
@@ -37,20 +37,20 @@ f_ic = @(x,y) 3/2*(1-y.^2);
 rans_on = 1;
 
 
-soln_dir = "test";
+soln_dir = "exp_mesh";
 save_soln = 1;
-plot_int = 100;
+plot_int = 250;
 save_soln_int = 500;
 
 %% Enrichment information
 en_on = 0;
 N_en_y = 1; 
-en_mag = 1;
-psi = {@(x,y) en_mag*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
-gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1.*y + 0.*x), ...
-        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
-        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% en_mag = 1;
+% psi = {@(x,y) en_mag*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
+% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1.*y + 0.*x), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
     
 % psi = {@(x,y) (0.5*(1 - y.^4) + 0.*x), @(x,y) 0.*y + 0.*x};
 % gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-2.*y.^3 + 0.*x), ...
@@ -61,19 +61,19 @@ hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
 
     
 % Law of the wall
-% Re_t = Re;
-% u_tau = 1;
-% nu = 1/Re_t;
-% kap = 0.41;
-% beta = 5.2;
-% dypdy = u_tau/nu;
-% ypb = 11.062299784340414;
-% yp = @(y) (1-abs(y))*Re_t;
-% psi = {@(x,y) (yp(y) <= ypb).*yp(y) + (yp(y) > ypb).*(1./kap.*log(yp(y)+eps)+beta) + 0.*x, @(x,y) 0.*y + 0.*x};
-% gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) ((yp(y) <= ypb).*1 + (yp(y) > ypb).*1/(kap*(yp(y)+eps)))*dypdy + 0.*x,...
-%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-% hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) ((yp(y) <= ypb).*0 + (yp(y) > ypb).*-1./(kap*(yp(y)+eps).^2))*dypdy*dypdy + 0.*x,...
-%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+Re_t = Re;
+u_tau = 1;
+nu = 1/Re_t;
+kap = 0.41;
+beta = 5.2;
+dypdy = u_tau/nu;
+ypb = 11.062299784340414;
+yp = @(y) (1-abs(y))*Re_t;
+psi = {@(x,y) (yp(y) <= ypb).*yp(y) + (yp(y) > ypb).*(1./kap.*log(yp(y)+eps)+beta) + 0.*x, @(x,y) 0.*y + 0.*x};
+gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) ((yp(y) <= ypb).*1 + (yp(y) > ypb).*1/(kap*(yp(y)+eps)))*dypdy + 0.*x,...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) ((yp(y) <= ypb).*0 + (yp(y) > ypb).*-1./(kap*(yp(y)+eps).^2))*dypdy*dypdy + 0.*x,...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
     
 
 %% Plot psi
@@ -95,7 +95,8 @@ N1=N+1;
 disp("Generating Matrices")
 Q=makeq(Ex,Ey,N); % Global continuity
 R=maker(Q,Ex,N); % Restriction matrix, applies Dirichlet conditions
-[X,Y]=make_geom_channel(Ex,Ey,N);      % Geometry in local form
+% [X,Y]=make_geom_channel(Ex,Ey,N);      % Geometry in local form
+[X,Y]=make_geom_channel_exp(Ex,Ey,N);      % Geometry in local form
 en_b_nodes = get_en_bound_nodes(Ex,Ey,N,N_en_y);
 
 Ys = zeros(Ey*length(Y(1,:,1)),1);
