@@ -470,14 +470,13 @@ for step=1:nstep
                 H_k=(Ma+A_k*dt/(b0));
                 H_k_bar = (Q'*Bb*Q+ Ab_k*dt/(b0));
                 
-                [A_x_omg,A_y_omg] = form_Ax_Ay(N1,E,w2d,J_x,J_y,J,dpdx_dpdx,dpdy_dpdy,Re_omg);
-                A_omg = R*Q'*(A_x_omg + A_y_omg)*Q*R';
-                Ab_omg = Q'*(A_x_omg + A_y_omg)*Q;
-                H_omg=(Ma+A_omg*dt/(b0));
-                H_omg_bar = (Q'*Bb*Q+ Ab_omg*dt/(b0));
-                
                 [LH_k,UH_k]=lu(H_k);
-                [LH_omg,UH_omg]=lu(H_omg);
+                
+                % Assuming Re_omg=Re_k
+                H_omg = H_k;
+                H_omg_bar = H_k_bar;
+                LH_omg = LH_k;
+                UH_omg = UH_k;
             end
 %             Hbar=(Bb+ Ab*dt/(b0*Re));
         end
