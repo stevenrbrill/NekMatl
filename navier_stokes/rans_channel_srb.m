@@ -430,6 +430,17 @@ for step=1:nstep
     if step==1; b0=1.0;    b= [ -1 0 0 ]';       a=[ 1  0 0 ]'; end
     if step==2; b0=1.5;    b=([ -4 1 0 ]')./2;   a=[ 2 -1 0 ]'; end
     if step==3; b0=11./6.; b=([ -18 9 -2 ]')./6; a=[ 3 -3 1 ]'; end
+    
+    % Compute A
+    [A_x_full,A_y_full,A_xy_full] = form_Ax_Ay_Axy(N1,E,w1d,J,dpdx_dpdx_flat,dpdy_dpdy_flat,dpdx_dpdy_flat,Re_comb);
+    A_x = R*Q'*A_x_full*Q*R';
+    A_y = R*Q'*A_y_full*Q*R';
+    A_xy = R*Q'*A_xy_full*Q*R';
+    A_uv = zeros(2*nn);
+    A_uv(1:nn,1:nn) = 2*A_x+A_y+A_xy;
+    A_uv(nn+1:2*nn,nn+1:2*nn) = A_x+2*A_y+A_xy';
+    A_uv = sparse(A_uv);
+    
 %     if step>=3
         if en_on
             A_full = 2*A_x_full+A_y_full+A_xy_full;
@@ -476,37 +487,28 @@ for step=1:nstep
             terms_x = zeros(N+1,N+1,E);
             terms_y = zeros(N+1,N+1,E);
             T1_rhs = 0;
-
-            [A_x_full,A_y_full,A_xy_full] = form_Ax_Ay_Axy(N1,E,w1d,J,dpdx_dpdx_flat,dpdy_dpdy_flat,dpdx_dpdy_flat,Re_comb);
-            A_x = R*Q'*A_x_full*Q*R';
-            A_y = R*Q'*A_y_full*Q*R';
-            A_xy = R*Q'*A_xy_full*Q*R';
-            A_uv = zeros(2*nn);
-            A_uv(1:nn,1:nn) = 2*A_x+A_y+A_xy;
-            A_uv(nn+1:2*nn,nn+1:2*nn) = A_x+2*A_y+A_xy';
-            A_uv = sparse(A_uv);
             
             H_uv = (Ma_uv + (A_uv)*dt/(b0));
 %             H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re)); 
             rhs_c = zeros(size(Ma(:,1)));
             [LH_uv,UH_uv]=lu(H_uv);
             
+%             Hbar=(Bb+ Ab*dt/(b0*Re));
             if rans_on
                 [A_x_k,A_y_k] = form_Ax_Ay(N1,E,w1d,J,dpdx_dpdx_flat,dpdy_dpdy_flat,Re_k);
                 A_k = R*Q'*(A_x_k + A_y_k)*Q*R';
                 Ab_k = Q'*(A_x_k + A_y_k)*Q;
                 H_k=(Ma+A_k*dt/(b0));
                 H_k_bar = (Q'*Bb*Q+ Ab_k*dt/(b0));
-                
+        
                 [LH_k,UH_k]=lu(H_k);
-                
+        
                 % Assuming Re_omg=Re_k
                 H_omg = H_k;
                 H_omg_bar = H_k_bar;
                 LH_omg = LH_k;
                 UH_omg = UH_k;
             end
-%             Hbar=(Bb+ Ab*dt/(b0*Re));
         end
         
         b0i=1./b0;
