@@ -213,6 +213,8 @@ if en_on
     disp("Computing enrichment")
     [Mp,Sp,T1,T2,T1_alt,T1_alt2,Mp_alt,Sp_alt,z_en,w_en] = enrich_mats(X,Y,E,N,psi,gpsi,hpsi,J);
     nb = N1*N1;
+    
+    [L_x_e,L_y_e,Jac_e,gpsi_e,Jac_e_flat,gpsi_e_flat] =  precomp_en(X,Y,E,N,psi,gpsi,hpsi);  
         
     for is=1:2
         Mp_all{is} = zeros(nb*E,nb*E);
@@ -265,6 +267,7 @@ if en_on
         Mp_all{is} = R*Q'*Mp_all{is}*Q*R';
         Sp_all{is} = sparse(Sp_all{is});
         Sp_all_c{is} = R*Q'*apply_en_cont(Sp_all{is},en_b_nodes,psi_p);
+        Sp_all_Q{is} = Q'*Sp_all{is}*Q;
         Sp_all{is} = R*Q'*Sp_all{is}*Q*R';
         
         Mp_alt_all{is} = sparse(Mp_alt_all{is});        
@@ -429,20 +432,41 @@ for step=1:nstep
     if step==3; b0=11./6.; b=([ -18 9 -2 ]')./6; a=[ 3 -3 1 ]'; end
 %     if step>=3
         if en_on
-            H_x=(Ma + A*dt/(b0*Re) + dt/b0*(Mp_all{1} + Sp_all{1}));
-            H_y=(Ma + A*dt/(b0*Re));
-            [LH_x,UH_x]=lu(H_x);
-            [LH_y,UH_y]=lu(H_y);
+            A_full = 2*A_x_full+A_y_full+A_xy_full;
+            A_c=R*Q'*apply_en_cont(A_full,en_b_nodes,psi_p);
+%             H_x=(Ma + A*dt/(b0*Re) + dt/b0*(Mp_all{1} + Sp_all{1}));
+%             H_y=(Ma + A*dt/(b0*Re));
+%             [LH_x,UH_x]=lu(H_x);
+%             [LH_y,UH_y]=lu(H_y);
             terms_x = 1/Re*(T1_all{1})+T2_all{1};
             terms_y = 1/Re*(T1_all{2})+T2_all{2};
             
-            T1_rhs = (dt/b0)*1/Re*R*Q'*reshape(T1_alt_all{1},nL,1);
+                
+            [T1_new] = form_T1_psi(E,N,w1d,Jac_e_flat,dphi_dy_flat,gpsi_e_flat,Re_comb);
             
-            H_uv = (Ma_uv + (A_uv)*dt/(b0*Re) + dt/b0*(Mp_uv + Sp_uv));
-            H_c = (M_c + (A_c)*dt/(b0*Re) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
-            H_q = full(H_uv);
+            T1_rhs = (dt/b0)*R*Q'*reshape(T1_new,nL,1);
+            
+            H_uv = (Ma_uv + (A_uv)*dt/(b0) + dt/b0*(Mp_uv + Sp_uv));
+            H_c = (M_c + (A_c)*dt/(b0) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
+%             H_q = full(H_uv);
             rhs_c = (H_c);
             [LH_uv,UH_uv]=lu(H_uv);
+            
+            if rans_on
+                [A_x_k,A_y_k] = form_Ax_Ay(N1,E,w1d,J,dpdx_dpdx_flat,dpdy_dpdy_flat,Re_k);
+                A_k = R*Q'*(A_x_k + A_y_k)*Q*R';
+                Ab_k = Q'*(A_x_k + A_y_k)*Q;
+                H_k=(Ma+A_k*dt/(b0)+dt/b0*Sp_all{1});
+                H_k_bar = (Q'*Bb*Q+ Ab_k*dt/(b0)+dt/b0*Sp_all_Q{1});
+        
+                [LH_k,UH_k]=lu(H_k);
+        
+                % Assuming Re_omg=Re_k
+                H_omg = H_k;
+                H_omg_bar = H_k_bar;
+                LH_omg = LH_k;
+                UH_omg = UH_k;
+            end
         else
 %             H=(Ma + A*dt/(b0*Re));
 %             [LH_x,UH_x]=lu(H);
