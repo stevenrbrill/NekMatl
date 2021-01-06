@@ -463,7 +463,7 @@ for step=1:nstep
             A_uv = sparse(A_uv);
             
             H_uv = (Ma_uv + (A_uv)*dt/(b0));
-            H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re)); 
+%             H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re)); 
             rhs_c = zeros(size(Ma(:,1)));
             [LH_uv,UH_uv]=lu(H_uv);
             
