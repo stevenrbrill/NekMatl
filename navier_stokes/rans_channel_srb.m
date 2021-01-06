@@ -28,19 +28,21 @@ omg_bc_val = 1*k_bc_val;
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
 N=5; % polynomial order  
 Ex=1; % Number of elements in x
-Ey=14; % Number of elements in y
+Ey=10; % Number of elements in y
 CFL=0.1;
 u_ic = Re;
 pert = 0.0;
 f_ic = @(x,y) 3/2*(1-y.^2);
+% f_ic = @(x,y) 20*(1-y.^8);
 
 rans_on = 1;
 
 
-soln_dir = "exp_mesh";
-save_soln = 1;
-plot_int = 250;
-save_soln_int = 500;
+soln_dir = "testing";
+plot_soln = 0;
+save_soln = 0;
+plot_int = 100;
+save_soln_int = 100;
 
 %% Enrichment information
 en_on = 0;
@@ -569,12 +571,12 @@ for step=1:nstep
     
     
 %% Output
-    if mod(step,plot_int)==0
+    if mod(step,plot_int)==0 && plot_soln
         plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
-        if mod(step,save_soln_int)==0 && save_soln
-            fname = strcat(soln_dir,"/soln_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ey),"_step_",num2str(step),".mat");
-            save(fname,"u","v","pr","psi","gpsi","hpsi","N","Ex","Ey","en_on","time","psi_xy","N_en_y","w","X","Y","Ys","Re","pert","k","omg","mu_t","k_bc","omg_bc","rho");
-        end
+    end
+    if mod(step,save_soln_int)==0 && save_soln
+        fname = strcat(soln_dir,"/soln_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ey),"_step_",num2str(step),".mat");
+        save(fname,"u","v","pr","psi","gpsi","hpsi","N","Ex","Ey","en_on","time","psi_xy","N_en_y","w","X","Y","Ys","Re","pert","k","omg","mu_t","k_bc","omg_bc","rho");
     end
 
 end
