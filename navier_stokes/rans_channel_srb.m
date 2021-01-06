@@ -135,7 +135,9 @@ M_c = R*Q'*apply_en_cont(Bb,en_b_nodes,psi_p);
 
 [L_x,L_y,J_x,J_y] = dir_jac(E,X,Y);
 w2d = w*w';
-[dphi_dxi, dphi_deta, dphi_dx, dphi_dy, dpdx_dpdx, dpdy_dpdy, dpdx_dpdy] ...
+w1d = reshape(w2d,[N1*N1,1])';
+[dphi_dxi, dphi_deta, dphi_dx, dphi_dy, dpdx_dpdx, dpdy_dpdy, dpdx_dpdy, ...
+        dpdx_dpdx_flat, dpdy_dpdy_flat, dpdx_dpdy_flat] ...
     = get_phi_grads(N1,Dh,E,J_x,J_y);
 dphi_dx_flat = reshape(dphi_dx,N1*N1,N1*N1,E);
 dphi_dy_flat = reshape(dphi_dy,N1*N1,N1*N1,E);
@@ -449,7 +451,7 @@ for step=1:nstep
             terms_y = zeros(N+1,N+1,E);
             T1_rhs = 0;
 
-            [A_x_full,A_y_full,A_xy_full] = form_Ax_Ay_Axy(N1,E,w2d,J_x,J_y,J,dpdx_dpdx,dpdy_dpdy,dpdx_dpdy,Re_comb);
+            [A_x_full,A_y_full,A_xy_full] = form_Ax_Ay_Axy(N1,E,w1d,J,dpdx_dpdx_flat,dpdy_dpdy_flat,dpdx_dpdy_flat,Re_comb);
             A_x = R*Q'*A_x_full*Q*R';
             A_y = R*Q'*A_y_full*Q*R';
             A_xy = R*Q'*A_xy_full*Q*R';
@@ -464,7 +466,7 @@ for step=1:nstep
             [LH_uv,UH_uv]=lu(H_uv);
             
             if rans_on
-                [A_x_k,A_y_k] = form_Ax_Ay(N1,E,w2d,J_x,J_y,J,dpdx_dpdx,dpdy_dpdy,Re_k);
+                [A_x_k,A_y_k] = form_Ax_Ay(N1,E,w1d,J,dpdx_dpdx_flat,dpdy_dpdy_flat,Re_k);
                 A_k = R*Q'*(A_x_k + A_y_k)*Q*R';
                 Ab_k = Q'*(A_x_k + A_y_k)*Q;
                 H_k=(Ma+A_k*dt/(b0));
