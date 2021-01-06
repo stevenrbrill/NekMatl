@@ -26,23 +26,23 @@ k_bc_val = 0;
 omg_bc_val = 1*k_bc_val;
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=5; % polynomial order  
+N=7; % polynomial order  
 Ex=1; % Number of elements in x
-Ey=10; % Number of elements in y
+Ey=14; % Number of elements in y
 CFL=0.1;
 u_ic = Re;
 pert = 0.0;
-f_ic = @(x,y) 3/2*(1-y.^2);
-% f_ic = @(x,y) 20*(1-y.^8);
+% f_ic = @(x,y) 3/2*(1-y.^2);
+f_ic = @(x,y) 20*(1-y.^8);
 
 rans_on = 1;
 
 
-soln_dir = "testing";
-plot_soln = 0;
-save_soln = 0;
-plot_int = 100;
-save_soln_int = 100;
+soln_dir = "big_run_20";
+plot_soln = 1;
+save_soln = 1;
+plot_int = 10000;
+save_soln_int = 10000;
 
 %% Enrichment information
 en_on = 0;
