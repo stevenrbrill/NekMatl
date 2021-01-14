@@ -22,7 +22,7 @@ Re = 10; Pr=0.8; Pe=Re*Pr;
 dpdx = 1;
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=4; % polynomial order  
+N=3; % polynomial order  
 Ex=1; % Number of elements in x
 Ey=3; % Number of elements in y
 CFL=0.1;
@@ -31,7 +31,7 @@ pert = 0.0;
 f_ic = @(x,y) u_ic*(1-y.^8)/2;
 
 %% Enrichment information
-en_on = 0; % 0 = no enrichment, 1 = implicit, 2 = explicit
+en_on = 2; % 0 = no enrichment, 1 = implicit, 2 = explicit
 N_en_y = 1; 
 en_mag = 1;
 psi = {@(x,y) en_mag*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
@@ -107,7 +107,8 @@ for j=1:nL
     x(j)=1; 
     Ab(:,j)=abar_c(x,Dh,G,Q);  % assembled Neumann Operator
 end
-A_c=R*Q'*apply_en_cont(Ab,en_b_nodes,psi_p);
+Ab_orig = Ab;
+A_c=R*Q'*apply_en_cont(Ab_orig,en_b_nodes,psi_p);
 S_check=full(Ab);
 Ab = Q'*Ab*Q;
 A=R*Ab*R'; % Full stiffness matrix

@@ -29,7 +29,7 @@ omg_bc_val = 1*k_bc_val;
 N=7; % polynomial order  
 Ex=1; % Number of elements in x
 Ey=14; % Number of elements in y
-CFL=0.1;
+CFL=0.01;
 u_ic = Re;
 pert = 0.0;
 % f_ic = @(x,y) 3/2*(1-y.^2);
@@ -38,11 +38,13 @@ f_ic = @(x,y) 20*(1-y.^8);
 rans_on = 1;
 
 
-soln_dir = "big_run_20";
+soln_dir = "big_run_20_2";
 plot_soln = 1;
 save_soln = 1;
 plot_int = 10000;
-save_soln_int = 10000;
+save_soln_int = 5000;
+restart = 0;
+rst_step = 65000;
 
 %% Enrichment information
 en_on = 0;
@@ -379,6 +381,11 @@ omg_bc = (Q'*Bb*Q)\(Q'*omg_bc);
 
 %%
 disp("Timestepping")
+if restart==1 
+    fname = strcat(soln_dir,"/soln_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ey),"_step_",num2str(rst_step),".mat");
+    load(fname);
+end
+
 plot1 = 1;
 time = 0;
 plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
@@ -391,6 +398,10 @@ end
 % psi_c(1:psi_len/2) = -1*ones(psi_len/2,1)*psi_p;
 % psi_c(psi_len/2+1:psi_len) = 1*ones(psi_len/2,1)*psi_p;
 for step=1:nstep
+    if (step == 1) && (restart == 1)
+        step = rst_step;
+    end
+    
     %% Form S
     u_flat = reshape(u,N1*N1,E);
     v_flat = reshape(v,N1*N1,E);
@@ -429,7 +440,7 @@ for step=1:nstep
     time=step*dt;
     if step==1; b0=1.0;    b= [ -1 0 0 ]';       a=[ 1  0 0 ]'; end
     if step==2; b0=1.5;    b=([ -4 1 0 ]')./2;   a=[ 2 -1 0 ]'; end
-    if step==3; b0=11./6.; b=([ -18 9 -2 ]')./6; a=[ 3 -3 1 ]'; end
+    if step>=3; b0=11./6.; b=([ -18 9 -2 ]')./6; a=[ 3 -3 1 ]'; end
     
     % Compute A
     [A_x_full,A_y_full,A_xy_full] = form_Ax_Ay_Axy(N1,E,w1d,J,dpdx_dpdx_flat,dpdy_dpdy_flat,dpdx_dpdy_flat,Re_comb);
