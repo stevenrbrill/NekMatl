@@ -3,7 +3,7 @@ function[T1] =  form_T1_psi(E,N,w1d,Jac_flat,dyphi2d_flat,gpsi_flat,Re,N_en_y)
 nb = (N+1)*(N+1);
 T1 = zeros(nb,E);
 
-Re_flat = reshape(Re,[],E);
+Re_flat = reshape(1./Re,[],E);
 
 k=1;
 for e = 1:E
