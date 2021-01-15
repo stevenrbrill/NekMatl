@@ -18,7 +18,7 @@ pointstyles = {'ko','bo','ro','go','co','mo','k^','b^','r^','g^','c^','m^','ks',
 
 format compact;
 format short; 
-mu = 1/395;
+mu = 1; %1/395;
 rho = 1;
 Re = rho/mu; 
 dpdx = 1;
@@ -26,9 +26,9 @@ k_bc_val = 0;
 omg_bc_val = 1*k_bc_val;
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=7; % polynomial order  
+N=4; % polynomial order  
 Ex=1; % Number of elements in x
-Ey=14; % Number of elements in y
+Ey=5; % Number of elements in y
 CFL=0.01;
 u_ic = Re;
 pert = 0.0;
@@ -38,23 +38,23 @@ f_ic = @(x,y) 20*(1-y.^8);
 rans_on = 1;
 
 
-soln_dir = "big_run_20_2";
+soln_dir = "test";
 plot_soln = 1;
-save_soln = 1;
-plot_int = 10000;
+save_soln = 0;
+plot_int = 100;
 save_soln_int = 5000;
 restart = 0;
 rst_step = 65000;
 
 %% Enrichment information
-en_on = 0;
+en_on = 1;
 N_en_y = 1; 
-% en_mag = 1;
-% psi = {@(x,y) en_mag*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
-% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1.*y + 0.*x), ...
-%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
-%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+en_mag = 1;
+psi = {@(x,y) en_mag*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
+gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1.*y + 0.*x), ...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
     
 % psi = {@(x,y) (0.5*(1 - y.^4) + 0.*x), @(x,y) 0.*y + 0.*x};
 % gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-2.*y.^3 + 0.*x), ...
@@ -65,19 +65,19 @@ N_en_y = 1;
 
     
 % Law of the wall
-Re_t = Re;
-u_tau = 1;
-nu = 1/Re_t;
-kap = 0.41;
-beta = 5.2;
-dypdy = u_tau/nu;
-ypb = 11.062299784340414;
-yp = @(y) (1-abs(y))*Re_t;
-psi = {@(x,y) (yp(y) <= ypb).*yp(y) + (yp(y) > ypb).*(1./kap.*log(yp(y)+eps)+beta) + 0.*x, @(x,y) 0.*y + 0.*x};
-gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) ((yp(y) <= ypb).*1 + (yp(y) > ypb).*1/(kap*(yp(y)+eps)))*dypdy + 0.*x,...
-        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) ((yp(y) <= ypb).*0 + (yp(y) > ypb).*-1./(kap*(yp(y)+eps).^2))*dypdy*dypdy + 0.*x,...
-        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% Re_t = Re;
+% u_tau = 1;
+% nu = 1/Re_t;
+% kap = 0.41;
+% beta = 5.2;
+% dypdy = u_tau/nu;
+% ypb = 11.062299784340414;
+% yp = @(y) (1-abs(y))*Re_t;
+% psi = {@(x,y) (yp(y) <= ypb).*yp(y) + (yp(y) > ypb).*(1./kap.*log(yp(y)+eps)+beta) + 0.*x, @(x,y) 0.*y + 0.*x};
+% gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) ((yp(y) <= ypb).*1 + (yp(y) > ypb).*1/(kap*(yp(y)+eps)))*dypdy + 0.*x,...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) ((yp(y) <= ypb).*0 + (yp(y) > ypb).*-1./(kap*(yp(y)+eps).^2))*dypdy*dypdy + 0.*x,...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
     
 
 %% Plot psi
@@ -99,8 +99,8 @@ N1=N+1;
 disp("Generating Matrices")
 Q=makeq(Ex,Ey,N); % Global continuity
 R=maker(Q,Ex,N); % Restriction matrix, applies Dirichlet conditions
-% [X,Y]=make_geom_channel(Ex,Ey,N);      % Geometry in local form
-[X,Y]=make_geom_channel_exp(Ex,Ey,N);      % Geometry in local form
+[X,Y]=make_geom_channel(Ex,Ey,N);      % Geometry in local form
+% [X,Y]=make_geom_channel_exp(Ex,Ey,N);      % Geometry in local form
 en_b_nodes = get_en_bound_nodes(Ex,Ey,N,N_en_y);
 
 Ys = zeros(Ey*length(Y(1,:,1)),1);
@@ -419,6 +419,14 @@ for step=1:nstep
         domgdx(:,:,ie) = reshape(dphi_dx_flat(:,:,ie)*omg_flat(:,ie),N1,N1);
         domgdy(:,:,ie) = reshape(dphi_dy_flat(:,:,ie)*omg_flat(:,ie),N1,N1);
     end
+    
+    if en_on
+        dudx = dudx + gpsi_e{1};
+        dudy = dudy + gpsi_e{2};
+        dvdx = dvdx + gpsi_e{3}; % Doesn't matter given assumptions
+        dvdy = dvdy + gpsi_e{4}; % Doesn't matter given assumptions
+    end
+    
     SS(:,:,:,1,1) = 1/2*(dudx+dudx);
     SS(:,:,:,1,2) = 1/2*(dudy+dvdx);
     SS(:,:,:,2,1) = 1/2*(dvdx+dudy);
@@ -463,8 +471,8 @@ for step=1:nstep
             terms_x = 1/Re*(T1_all{1})+T2_all{1};
             terms_y = 1/Re*(T1_all{2})+T2_all{2};
             
-                
-            [T1_new] = form_T1_psi(E,N,w1d,Jac_e_flat,dphi_dy_flat,gpsi_e_flat,Re_comb);
+            T1_comp = 1/Re*reshape(T1_alt_all{1},nL,1);
+            [T1_new] = form_T1_psi(E,N,w1d,Jac_e_flat,dphi_dy_flat,gpsi_e_flat,Re_comb,N_en_y);
             
             T1_rhs = (dt/b0)*R*Q'*reshape(T1_new,nL,1);
             
