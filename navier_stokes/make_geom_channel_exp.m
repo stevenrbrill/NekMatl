@@ -15,22 +15,29 @@ if mod(Ey,2) == 1
     max_side = N_side*(2/Ey);
 end
 
-Pr = 0.5;
-f_geo = @(n) (1-Pr).^n;
-pt_geo = f_geo(linspace(0,N_side-1,N_side));
+Pr = 0.55;
+a = 1./((1-Pr.^N_side)./(1-Pr));
+f_geo = @(n) a*(Pr).^n;
+dist_geo = f_geo(linspace(0,N_side-1,N_side));
 nodes_y = zeros(Ey+1,1);
 nodes_y(1) = -1;
+pt_geo = zeros(size(dist_geo));
+for i = 1:N_side
+    for j = 1:i
+        pt_geo(i) = pt_geo(i) + dist_geo(j);
+    end
+end
 % for ey = 1:Ey
 %     nodes_y(ey+1) = nodes_y(ey) + 2/Ey;
 % end
 if mod(Ey,2) == 0
     nodes_y(1) = -1;
     for ey = 1:N_side
-        nodes_y(ey+1) = nodes_y(1) + pt_geo(N_side-ey+1);
+        nodes_y(ey) = -pt_geo(N_side-ey+1);
     end
 %     nodes_y(N_side+1) = 0;
     for ey = 1:N_side-1
-        nodes_y(N_side+ey+1) = nodes_y(N_side+1) + 1-pt_geo(ey+1);
+        nodes_y(N_side+ey+1) = pt_geo(ey);
     end
     nodes_y(end) = 1;
 else

@@ -36,6 +36,7 @@ pert = 0.0;
 f_ic = @(x,y) 20*(1-y.^8);
 
 rans_on = 1;
+exp_mesh = 1;
 
 
 soln_dir = "test";
@@ -100,7 +101,9 @@ disp("Generating Matrices")
 Q=makeq(Ex,Ey,N); % Global continuity
 R=maker(Q,Ex,N); % Restriction matrix, applies Dirichlet conditions
 [X,Y]=make_geom_channel(Ex,Ey,N);      % Geometry in local form
-% [X,Y]=make_geom_channel_exp(Ex,Ey,N);      % Geometry in local form
+if exp_mesh
+    [X,Y]=make_geom_channel_exp(Ex,Ey,N);      % Geometry in local form
+end
 en_b_nodes = get_en_bound_nodes(Ex,Ey,N,N_en_y);
 
 Ys = zeros(Ey*length(Y(1,:,1)),1);
