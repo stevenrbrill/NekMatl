@@ -5,8 +5,8 @@
 format compact; format longe; clear all
 Ra=120000; Pr=0.8; Re=sqrt(Ra); Pe=Re*Pr; 
 
-%N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
-N=4;E=5; N1=N+1; nL=N1*N1*E; % 10th order 
+% N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
+N=10;E=5; N1=N+1; nL=N1*N1*E; % 10th order 
 
 Q=makeq(E,1,N);
 R=maker(Q,E,N);
@@ -34,7 +34,7 @@ Ma=R*Bb*R';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-CFL=0.3; dxmin=pi*(z(N1)-z(N))/(2*E); % Get min dx for CFL constraint
+CFL=0.03; dxmin=pi*(z(N1)-z(N))/(2*E); % Get min dx for CFL constraint
 Tfinal=150; dt=CFL*dxmin; nstep=ceil(Tfinal/dt); dt=Tfinal/nstep; nstep
 
 
