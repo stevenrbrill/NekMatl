@@ -18,22 +18,22 @@ pointstyles = {'ko','bo','ro','go','co','mo','k^','b^','r^','g^','c^','m^','ks',
 
 format compact;
 format short; 
-mu = 1; %1/395;
+mu = 1/10000; %1/395;
 rho = 1;
 Re = rho/mu; 
 dpdx = 1;
 k_bc_val = 0;
-omg_bc_val = 1*k_bc_val;
+omg_bc_val = 0;
 
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
 N=4; % polynomial order  
 Ex=1; % Number of elements in x
-Ey=5; % Number of elements in y
-CFL=0.01;
+Ey=16; % Number of elements in y
+CFL=0.1;
 u_ic = Re;
 pert = 0.0;
-% f_ic = @(x,y) 3/2*(1-y.^2);
-f_ic = @(x,y) 20*(1-y.^8);
+f_ic = @(x,y) 3/2*(1-y.^2);
+% f_ic = @(x,y) 20*(1-y.^8);
 
 rans_on = 1;
 exp_mesh = 1;
@@ -349,7 +349,7 @@ fact = exp((-(log10(Yp)-1).^2)./(2*sigma.^2));
 k = k_bc_val + 4.5*u_tau*u_tau*fact;
 
 eps_s = 3;
-omg_bc_val = 40000*u_tau.^2/(mu*eps_s.^2);
+omg_bc_val = 0; %40000*u_tau.^2/(mu*eps_s.^2);
 omg = omg_bc_val + 0.5*Re*u_tau*u_tau*fact;
 
 % u = apply_en_cont_soln(u,en_b_nodes,psi_p);
@@ -441,8 +441,8 @@ for step=1:nstep
     
 
     %% Get rans values
-    [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg] ...
-        = get_rans_coeffs(rho,mu,k,omg,SS,OS,dkdx,dkdy,domgdx,domgdy);
+    [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg,R1,R2,R3] ...
+        = get_rans_coeffs(rho,mu,k,omg,SS,OS,dkdx,dkdy,domgdx,domgdy,Y,u,v);
     Re_t = rho./(mu_t+eps);
     Re_comb = rho./(mu*ones(size(mu_t))+mu_t*rans_on);
     Re_k = rho./gam_k;
@@ -546,7 +546,7 @@ for step=1:nstep
     fx1 = -convl(u,RX,Dh,u,v) + F; % du = Cu  
     fy1 = -convl(v,RX,Dh,u,v); % dv = Cv
     fk1 = -convl(k,RX,Dh,u,v) + G_k - Y_k + S_k; % dk = Ck
-    fomg1 = -convl(omg,RX,Dh,u,v) + G_omg - Y_omg + S_omg; % domg = Comg
+    fomg1 = -convl(omg,RX,Dh,u,v) + G_omg - Y_omg + S_omg + R1 + R2 + R3; % domg = Comg
     
     %%
 

@@ -1,5 +1,5 @@
-function [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg] ...
-        = get_rans_coeffs(rho,mu,k,omg,SS,OS,dkdx,dkdy,domgdx,domgdy)
+function [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg,R1,R2,R3] ...
+        = get_rans_coeffs(rho,mu,k,omg_prime,SS,OS,dkdx,dkdy,domg_primedx,domg_primedy,y,u,v)
 
     sigma_k = 2;
     sigma_omg = 2;
@@ -16,14 +16,25 @@ function [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg] ...
     alpha_0 = 1/9;
     alpha_0_star = beta_0/3;
     
+    a=6;
+    y_w = abs(1-y);
+    dy_wdx = 0;
+    dy_wdy = -1.*((y>0)-1);
+    hess_y_w = 0;
+    omg_w = a.*mu./rho./(beta_0.*y_w.*y_w);
+    domg_wdx = -2*dy_wdx./y_w.*omg_w;
+    domg_wdy = -2*dy_wdy./y_w.*omg_w;
+    omg = omg_prime + omg_w;
+    domgdx = domg_primedx + domg_wdx;
+    domgdy = domg_primedy + domg_wdy;
+    
     Re_t = rho.*k./(mu.*omg+eps);
     
     alpha_star = alpha_inf_star.*(alpha_0_star+Re_t./R_k)./(1+Re_t./R_k);
     % alpha_star can b 1
     alpha = alpha_inf./alpha_star.*(alpha_0+Re_t./R_omg)./(1+Re_t./R_omg);
     % alpha can be 13/25
-        
-    
+            
     xk = 1./(omg.^3 + eps).*(dkdx.*domgdx+dkdy.*domgdy); 
     f_beta_star = 1.*(xk < 0) + (1+680*xk.^2)./(1+400*xk.^2).*(xk>0);
     
@@ -54,5 +65,20 @@ function [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg] ...
     Y_omg = rho.*beta.*omg.^2;
     S_k = 0.*k;
     S_omg = 0.*k;
+    
+    
+    % Regularlized terms
+    hess_omg_w = omg_w.*(6*(dy_wdx.^2+dy_wdy.^2)./(y_w.^2)-2*(hess_y_w)./(y_w));
+    R1 = (mu+mu_t./sigma_omg).*hess_omg_w;
+    
+    r_tilde = Re_t./R_k; % typo in paper?
+    f_r_tilde = (1-alpha_0_star)./((alpha_0_star+r_tilde).*(1+r_tilde));
+    R2 = -2*rho.*alpha_star./(sigma_omg).*(1+r_tilde.*f_r_tilde).*(omg_w./omg)...
+        .*((dy_wdx.*dkdx + dy_wdy.*dkdy)./y_w ...
+        + 2*(omg_w./omg).*(dy_wdx.^2+dy_wdy.^2)./(y_w.^2).*k ...
+        -(omg_w./omg).*k.*(dy_wdx.*domg_primedx + dy_wdy.*domg_primedy)./(y_w.*omg_w));
+    
+    R3 = 2*omg_w.*rho.*(u.*dy_wdx + v.*dy_wdy)./y_w;
+    
 
 end
