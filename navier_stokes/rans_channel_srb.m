@@ -29,7 +29,7 @@ omg_bc_val = 0;
 N=4; % polynomial order  
 Ex=1; % Number of elements in x
 Ey=16; % Number of elements in y
-CFL=0.1;
+CFL=50;
 u_ic = Re;
 pert = 0.0;
 f_ic = @(x,y) 3/2*(1-y.^2);
@@ -41,21 +41,21 @@ exp_mesh = 1;
 
 soln_dir = "test";
 plot_soln = 1;
-save_soln = 0;
+save_soln = 1;
 plot_int = 100;
-save_soln_int = 5000;
+save_soln_int = 1000;
 restart = 0;
 rst_step = 65000;
 
 %% Enrichment information
-en_on = 1;
+en_on = 0;
 N_en_y = 1; 
-en_mag = 1;
-psi = {@(x,y) en_mag*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
-gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1.*y + 0.*x), ...
-        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
-        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+en_mag = 10;
+% psi = {@(x,y) en_mag*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
+% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1.*y + 0.*x), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
     
 % psi = {@(x,y) (0.5*(1 - y.^4) + 0.*x), @(x,y) 0.*y + 0.*x};
 % gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-2.*y.^3 + 0.*x), ...
@@ -66,19 +66,19 @@ hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
 
     
 % Law of the wall
-% Re_t = Re;
-% u_tau = 1;
-% nu = 1/Re_t;
-% kap = 0.41;
-% beta = 5.2;
-% dypdy = u_tau/nu;
-% ypb = 11.062299784340414;
-% yp = @(y) (1-abs(y))*Re_t;
-% psi = {@(x,y) (yp(y) <= ypb).*yp(y) + (yp(y) > ypb).*(1./kap.*log(yp(y)+eps)+beta) + 0.*x, @(x,y) 0.*y + 0.*x};
-% gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) ((yp(y) <= ypb).*1 + (yp(y) > ypb).*1/(kap*(yp(y)+eps)))*dypdy + 0.*x,...
-%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-% hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) ((yp(y) <= ypb).*0 + (yp(y) > ypb).*-1./(kap*(yp(y)+eps).^2))*dypdy*dypdy + 0.*x,...
-%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+Re_t = Re;
+u_tau = 1;
+nu = 1/Re_t;
+kap = 0.41;
+beta = 5.2;
+dypdy = u_tau/nu;
+ypb = 11.062299784340414;
+yp = @(y) (1-abs(y))*Re_t;
+psi = {@(x,y) (yp(y) <= ypb).*yp(y) + (yp(y) > ypb).*(1./kap.*log(yp(y)+eps)+beta) + 0.*x, @(x,y) 0.*y + 0.*x};
+gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) ((yp(y) <= ypb).*1 + (yp(y) > ypb).*1/(kap*(yp(y)+eps)))*dypdy + 0.*x,...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) ((yp(y) <= ypb).*0 + (yp(y) > ypb).*-1./(kap*(yp(y)+eps).^2))*dypdy*dypdy + 0.*x,...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
     
 
 %% Plot psi
@@ -149,16 +149,16 @@ w1d = reshape(w2d,[N1*N1,1])';
 dphi_dx_flat = reshape(dphi_dx,N1*N1,N1*N1,E);
 dphi_dy_flat = reshape(dphi_dy,N1*N1,N1*N1,E);
 
-myA = zeros(N1*N1*E);
-for ie=1:E
-    for i=1:N1*N1
-        for j=1:N1*N1
-            myA((ie-1)*N1*N1+i,(ie-1)*N1*N1+j) = ... 
-                sum(J(:,:,ie).*w2d.*dpdx_dpdx(:,:,i,j,ie) ...
-               + J(:,:,ie).*w2d.*dpdy_dpdy(:,:,i,j,ie),'All');           
-        end
-    end    
-end
+% myA = zeros(N1*N1*E);
+% for ie=1:E
+%     for i=1:N1*N1
+%         for j=1:N1*N1
+%             myA((ie-1)*N1*N1+i,(ie-1)*N1*N1+j) = ... 
+%                 sum(J(:,:,ie).*w2d.*dpdx_dpdx(:,:,i,j,ie) ...
+%                + J(:,:,ie).*w2d.*dpdy_dpdy(:,:,i,j,ie),'All');           
+%         end
+%     end    
+% end
 
 A_x = form_Ax(N1,E,w2d,J_x,J,dpdx_dpdx,ones(size(J)));
 A_y = form_Ay(N1,E,w2d,J_y,J,dpdy_dpdy,ones(size(J)));
