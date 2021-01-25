@@ -343,7 +343,7 @@ end
 
 % u_tau = 1;
 u_tau = sqrt(0.316./(Re.^0.25)/8);
-Yp = max((1-abs(Y))*u_tau*Re,1e-3);
+Yp = max((1-abs(Y))*u_tau*Re,1e-3)+eps;
 sigma = 0.6;
 fact = exp((-(log10(Yp)-1).^2)./(2*sigma.^2));
 k = k_bc_val + 4.5*u_tau*u_tau*fact;
@@ -452,7 +452,7 @@ for step=1:nstep
     if step==1; b0=1.0;    b= [ -1 0 0 ]';       a=[ 1  0 0 ]'; end
     if step==2; b0=1.5;    b=([ -4 1 0 ]')./2;   a=[ 2 -1 0 ]'; end
     if step>=3; b0=11./6.; b=([ -18 9 -2 ]')./6; a=[ 3 -3 1 ]'; end
-    
+
     % Compute A
     [A_x_full,A_y_full,A_xy_full] = form_Ax_Ay_Axy(N1,E,w1d,J,dpdx_dpdx_flat,dpdy_dpdy_flat,dpdx_dpdy_flat,Re_comb);
     A_x = R*Q'*A_x_full*Q*R';
@@ -583,8 +583,8 @@ for step=1:nstep
     v_rhs=R*(Q'*reshape(ML.*vL,nL,1));
     
     if rans_on
-        k_rhs=R*(Q'*reshape(ML.*k,nL,1)-H_k_bar*k_bc);
-        omg_rhs=R*(Q'*reshape(ML.*omg,nL,1)-H_omg_bar*omg_bc);
+        k_rhs=R*(Q'*reshape(ML.*k,nL,1));%-H_k_bar*k_bc);
+        omg_rhs=R*(Q'*reshape(ML.*omg,nL,1));%-H_omg_bar*omg_bc);
     end
     
     u_rhs = u_rhs + T1_rhs;
@@ -611,9 +611,9 @@ for step=1:nstep
     
     
     if rans_on
-        k=Q*(R'*k+k_bc);
+        k=Q*(R'*k);%+k_bc);
         k=reshape(k,N1,N1,E);
-        omg=Q*(R'*omg+omg_bc);
+        omg=Q*(R'*omg);%+omg_bc);
         omg=reshape(omg,N1,N1,E);
     end
     

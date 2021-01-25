@@ -17,9 +17,9 @@ function [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg,R1,R2,R3] ...
     alpha_0_star = beta_0/3;
     
     a=6;
-    y_w = abs(1-y);
+    y_w = 1-abs(y);
     dy_wdx = 0;
-    dy_wdy = -1.*((y>0)-1);
+    dy_wdy = -1+2.*(y>0);
     hess_y_w = 0;
     omg_w = a.*mu./rho./(beta_0.*y_w.*y_w);
     domg_wdx = -2*dy_wdx./y_w.*omg_w;
