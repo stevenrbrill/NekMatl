@@ -29,7 +29,8 @@ omg_bc_val = 0;
 N=4; % polynomial order  
 Ex=1; % Number of elements in x
 Ey=16; % Number of elements in y
-CFL=50;
+Tfinal=150; 
+CFL=20;
 u_ic = Re;
 pert = 0.0;
 f_ic = @(x,y) 3/2*(1-y.^2);
@@ -39,13 +40,13 @@ rans_on = 1;
 exp_mesh = 1;
 
 
-soln_dir = "test";
+soln_dir = "const_mass_2";
 plot_soln = 1;
 save_soln = 1;
-plot_int = 100;
+plot_int = 1000;
 save_soln_int = 1000;
 restart = 0;
-rst_step = 65000;
+rst_step = 45000;
 
 %% Enrichment information
 en_on = 0;
@@ -313,7 +314,6 @@ end
 %%
 
 dxmin=pi*(z(N1)-z(N))/(2*Ex); % Get min dx for CFL constraint
-Tfinal=50; 
 dt=CFL*dxmin/u_ic; 
 nstep=ceil(Tfinal/dt); 
 dt=Tfinal/nstep; 
