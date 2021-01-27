@@ -1,4 +1,4 @@
-function [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg,R1,R2,R3] ...
+function [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg,R1,R2,R3,omg_w] ...
         = get_rans_coeffs(rho,mu,k,omg_prime,SS,OS,dkdx,dkdy,domg_primedx,domg_primedy,y,u,v)
 
     sigma_k = 2;
@@ -36,7 +36,7 @@ function [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg,R1,R2,R3] ...
     % alpha can be 13/25
             
     xk = 1./(omg.^3 + eps).*(dkdx.*domgdx+dkdy.*domgdy); 
-    f_beta_star = 1.*(xk < 0) + (1+680*xk.^2)./(1+400*xk.^2).*(xk>0);
+    f_beta_star = 1.*(xk < 0) + (1+680*xk.^2)./(1+400*xk.^2).*(xk>=0);
     
     x_omg = 0.*k; 
     for i=1:2
