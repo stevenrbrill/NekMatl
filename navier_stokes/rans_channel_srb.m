@@ -393,9 +393,11 @@ omg_bc = (Q'*Bb*Q)\(Q'*omg_bc);
 avg_u = sum(u.*w2d_e,'All')/dom_vol;
 %%
 disp("Timestepping")
-if restart==1 
-    fname = strcat(soln_dir,"/soln_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ey),"_step_",num2str(rst_step),".mat");
-    load(fname);
+step = 1;
+if (restart == 1)
+   fname = strcat(soln_dir,"/soln_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ey),"_step_",num2str(rst_step),".mat");
+   load(fname);
+   step = rst_step;
 end
 
 plot1 = 1;
@@ -409,10 +411,7 @@ end
 % psi_c = zeros(psi_len,1);
 % psi_c(1:psi_len/2) = -1*ones(psi_len/2,1)*psi_p;
 % psi_c(psi_len/2+1:psi_len) = 1*ones(psi_len/2,1)*psi_p;
-step = 1;
-if (restart == 1)
-   step = rst_step;
-end
+
 while step <= nstep
     
     
