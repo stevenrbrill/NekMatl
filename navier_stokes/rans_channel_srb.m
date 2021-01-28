@@ -75,6 +75,7 @@ beta = 5.2;
 dypdy = u_tau/nu;
 ypb = 11.062299784340414;
 yp = @(y) (1-abs(y))*Re_t;
+lotw = @(yp) (yp <= ypb).*yp + (yp > ypb).*(1./kap.*log(yp+eps)+beta);
 psi = {@(x,y) (yp(y) <= ypb).*yp(y) + (yp(y) > ypb).*(1./kap.*log(yp(y)+eps)+beta) + 0.*x, @(x,y) 0.*y + 0.*x};
 gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) ((yp(y) <= ypb).*1 + (yp(y) > ypb).*1/(kap*(yp(y)+eps)))*dypdy + 0.*x,...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
@@ -453,8 +454,11 @@ while step <= nstep
     %% Get rans values
     [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg,R1,R2,R3,omg_w] ...
         = get_rans_coeffs(rho,mu,k,omg,SS,OS,dkdx,dkdy,domgdx,domgdy,Y,u,v);
+    if ~rans_on
+        mu_t = zeros(size(mu_t));
+    end
     Re_t = rho./(mu_t+eps);
-    Re_comb = rho./(mu*ones(size(mu_t))+mu_t*rans_on);
+    Re_comb = rho./(mu*ones(size(mu_t))+mu_t);
     Re_k = rho./gam_k;
     Re_omg = rho./gam_omg;
     %% Timestepping
