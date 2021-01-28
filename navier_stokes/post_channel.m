@@ -1,4 +1,4 @@
-function plot1_new = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1)
+function [plot1_new,u_mean] = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,step,time,u,psi_xy,N_en_y,plot1)
 
 u_mean = zeros(Ey*length(u(1,:,1)),1);
 for i = 1:Ey
@@ -55,7 +55,6 @@ xlabel('u')
 ylabel('y')
 %         pause(.1);
 umax = glmax(u_recon);
-[time umax 1/(2*pi/(umax*time))]
-
+disp([time umax 1/(2*pi/(umax*time))])
 
 end

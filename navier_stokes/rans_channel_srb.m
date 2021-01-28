@@ -399,7 +399,7 @@ end
 
 plot1 = 1;
 time = 0;
-plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
+plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,step,time,u,psi_xy,N_en_y,plot1);
 if save_soln
     mkdir(soln_dir);
 end
@@ -688,10 +688,11 @@ while step <= nstep
     
 %% Output
     if mod(step,plot_int)==0 && plot_soln
-        plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
+        [plot1,u_mean] = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,step,time,u,psi_xy,N_en_y,plot1);
 %         avg_u = sum(u.*w2d_e,'All')/dom_vol
     end
     if mod(step,save_soln_int)==0 && save_soln
+        disp(step)
         fname = strcat(soln_dir,"/soln_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ey),"_step_",num2str(step),".mat");
         save(fname); %,"u","v","pr","psi","gpsi","hpsi","N","Ex","Ey","en_on","time","psi_xy","N_en_y","w","X","Y","Ys","Re","pert","k","omg","mu_t","k_bc","omg_bc","rho","u_0","v_0","pr_0");
     end
@@ -704,14 +705,13 @@ while step <= nstep
     step = step + 1;
 end
 if  plot_soln
-        plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,time,u,psi_xy,N_en_y,plot1);
-        avg_u = sum(u.*w2d_e,'All')/dom_vol
-    end
-    if  save_soln
-        fname = strcat(soln_dir,"/soln_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ey),"_step_",num2str(step),".mat");
-        save(fname);
-%         ,"u","v","pr","psi","gpsi","hpsi","N","Ex","Ey","en_on","time","psi_xy","N_en_y","w","X","Y","Ys","Re","pert",...
-%             "k","omg","mu_t","k_bc","omg_bc","rho","fk1","fk2","fk3","fomg1","fomg2","fomg3","fx1","fx2","fx3","fy1","fy2","fy3",...
-%             "fx1_0","fx2_0","fx3_0","fy1_0","fy2_0","fy3_0","pr_0","u_0","v_0","u1","u2","u3","v1","v2","v3","k1","k2","k3","omg1","omg2","omg3");
-    end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    [plot1,u_mean] = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,step,time,u,psi_xy,N_en_y,plot1);
+    avg_u = sum(u.*w2d_e,'All')/dom_vol
+end
+if  save_soln
+    fname = strcat(soln_dir,"/soln_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ey),"_step_",num2str(step),".mat");
+    save(fname);
+    %         ,"u","v","pr","psi","gpsi","hpsi","N","Ex","Ey","en_on","time","psi_xy","N_en_y","w","X","Y","Ys","Re","pert",...
+    %             "k","omg","mu_t","k_bc","omg_bc","rho","fk1","fk2","fk3","fomg1","fomg2","fomg3","fx1","fx2","fx3","fy1","fy2","fy3",...
+    %             "fx1_0","fx2_0","fx3_0","fy1_0","fy2_0","fy3_0","pr_0","u_0","v_0","u1","u2","u3","v1","v2","v3","k1","k2","k3","omg1","omg2","omg3");
+end
