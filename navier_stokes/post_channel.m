@@ -42,10 +42,16 @@ else
     figure(4);
     plot1_new = 1;
 end
+
+my_yticks = zeros(Ey+1,1);
+my_yticks(1) = Ys(1);
+for i=1:Ey
+    my_yticks(i+1) = Ys(i*(N+1));
+end
 for i = 1:Ey
     plot(u_mean,Ys,'b-o')
     set(gca, 'YGrid', 'on', 'XGrid', 'off')
-    yticks(linspace(-1,1,Ey+1));
+    yticks(my_yticks);
     hold on
 end
 hold off
