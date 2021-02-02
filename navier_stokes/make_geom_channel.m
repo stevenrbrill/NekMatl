@@ -22,7 +22,7 @@ end;
 
 xM=glmax(X); 
 xm=glmin(X); 
-s=2*pi/(xM-xm); 
+s=0.375/(xM-xm); %2*pi/(xM-xm); 
 X=s*X; %  X on [0,2pi]
 
 yM=glmax(Y); 

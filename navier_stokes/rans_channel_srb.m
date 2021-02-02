@@ -18,7 +18,7 @@ pointstyles = {'ko','bo','ro','go','co','mo','k^','b^','r^','g^','c^','m^','ks',
 
 format compact;
 format short; 
-mu = 1/10000; %1/395;
+mu = 1/100000; %1/395; 1/6874;
 rho = 1;
 Re = rho/mu; 
 dpdx = 1;
@@ -28,8 +28,8 @@ omg_bc_val = 0;
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
 N=4; % polynomial order  
 Ex=1; % Number of elements in x
-Ey=16; % Number of elements in y
-Tfinal=150; 
+Ey=10; % Number of elements in y
+Tfinal=300; 
 CFL=20;
 u_ic = Re;
 pert = 0.0;
@@ -37,13 +37,12 @@ f_ic = @(x,y) 3/2*(1-y.^2);
 % f_ic = @(x,y) 20*(1-y.^8);
 
 rans_on = 1;
-exp_mesh = 1;
+exp_mesh = 0;
 
-
-soln_dir = "const_mass_2";
+soln_dir = "re10000";
 plot_soln = 1;
-save_soln = 1;
-plot_int = 1000;
+save_soln = 0;
+plot_int = 100;
 save_soln_int = 1000;
 restart = 0;
 rst_step = 45000;
@@ -67,8 +66,9 @@ en_mag = 10;
 
     
 % Law of the wall
-Re_t = Re;
-u_tau = 1;
+u_tau = sqrt(0.316./(Re.^0.25)/8);
+Re_t = u_tau/mu; %Re;
+% u_tau = 1;
 nu = 1/Re_t;
 kap = 0.41;
 beta = 5.2;
@@ -316,6 +316,8 @@ end
 
 dxmin=pi*(z(N1)-z(N))/(2*Ex); % Get min dx for CFL constraint
 dt=CFL*dxmin/u_ic; 
+
+dt = 1e-3;
 nstep=ceil(Tfinal/dt); 
 dt=Tfinal/nstep; 
 % Print information
@@ -348,8 +350,10 @@ for e = 1:E
     end
 end
 
+darcy = 0.316./(Re.^0.25);
+u_tau = sqrt(darcy/8);
 % u_tau = 1;
-u_tau = sqrt(0.316./(Re.^0.25)/8);
+% u_tau = sqrt(0.316./(Re.^0.25)/8);
 Yp = max((1-abs(Y))*u_tau*Re,1e-3)+eps;
 sigma = 0.6;
 fact = exp((-(log10(Yp)-1).^2)./(2*sigma.^2));
