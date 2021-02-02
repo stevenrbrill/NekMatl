@@ -31,10 +31,6 @@ Ex=1; % Number of elements in x
 Ey=10; % Number of elements in y
 Tfinal=300; 
 CFL=20;
-u_ic = Re;
-pert = 0.0;
-f_ic = @(x,y) 3/2*(1-y.^2);
-% f_ic = @(x,y) 20*(1-y.^8);
 
 rans_on = 1;
 exp_mesh = 0;
@@ -45,10 +41,15 @@ save_soln = 0;
 plot_int = 100;
 save_soln_int = 1000;
 restart = 0;
-rst_step = 45000;
+rst_step = 300000;
+
+u_ic = Re;
+pert = 0.0;
+f_ic = @(x,y) 3/2*(1-y.^2);
+% f_ic = @(x,y) 20*(1-y.^8);
 
 %% Enrichment information
-en_on = 0;
+en_on = 2;
 N_en_y = 1; 
 en_mag = 10;
 % psi = {@(x,y) en_mag*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
@@ -76,10 +77,10 @@ dypdy = u_tau/nu;
 ypb = 11.062299784340414;
 yp = @(y) (1-abs(y))*Re_t;
 lotw = @(yp) (yp <= ypb).*yp + (yp > ypb).*(1./kap.*log(yp+eps)+beta);
-psi = {@(x,y) (yp(y) <= ypb).*yp(y) + (yp(y) > ypb).*(1./kap.*log(yp(y)+eps)+beta) + 0.*x, @(x,y) 0.*y + 0.*x};
-gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) ((yp(y) <= ypb).*1 + (yp(y) > ypb).*1/(kap*(yp(y)+eps)))*dypdy + 0.*x,...
+psi = {@(x,y) u_tau*((yp(y) <= ypb).*yp(y) + (yp(y) > ypb).*(1./kap.*log(yp(y)+eps)+beta) + 0.*x), @(x,y) 0.*y + 0.*x};
+gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) u_tau*(((yp(y) <= ypb).*1 + (yp(y) > ypb).*1/(kap*(yp(y)+eps)))*dypdy + 0.*x),...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) ((yp(y) <= ypb).*0 + (yp(y) > ypb).*-1./(kap*(yp(y)+eps).^2))*dypdy*dypdy + 0.*x,...
+hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) u_tau*(((yp(y) <= ypb).*0 + (yp(y) > ypb).*-1./(kap*(yp(y)+eps).^2))*dypdy*dypdy + 0.*x),...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
     
 
@@ -222,6 +223,19 @@ G_uv = sparse(G_uv);
 %% Assemble enrichment matrices
 psi_xy{1} = psi{1}(X,Y);
 psi_xy{2} = psi{2}(X,Y);
+psi_xy_act{1} = zeros(size(X));
+psi_xy_act{2} = zeros(size(X));
+if en_on
+    for iy = 1:Ey
+        for ix = 1:Ex
+            if ((iy <= N_en_y) || (iy > Ey-N_en_y))
+                i = (iy-1)*Ex+ix;
+                psi_xy_act{1}(:,:,i) = psi_xy{1}(:,:,i);
+                psi_xy_act{2}(:,:,i) = psi_xy{2}(:,:,i);
+            end
+        end
+    end
+end
 if en_on
     disp("Computing enrichment")
     [Mp,Sp,T1,T2,T1_alt,T1_alt2,Mp_alt,Sp_alt,z_en,w_en] = enrich_mats(X,Y,E,N,psi,gpsi,hpsi,J);
@@ -276,9 +290,11 @@ if en_on
         end
         %%
         Mp_all{is} = sparse(Mp_all{is});        
+        Mp_full{is} = Mp_all{is};
         Mp_all_c{is} = R*Q'*apply_en_cont(Mp_all{is},en_b_nodes,psi_p);
         Mp_all{is} = R*Q'*Mp_all{is}*Q*R';
         Sp_all{is} = sparse(Sp_all{is});
+        Sp_full{is} = Sp_all{is};
         Sp_all_c{is} = R*Q'*apply_en_cont(Sp_all{is},en_b_nodes,psi_p);
         Sp_all_Q{is} = Q'*Sp_all{is}*Q;
         Sp_all{is} = R*Q'*Sp_all{is}*Q*R';
@@ -469,38 +485,45 @@ while step <= nstep
     if step==1; b0=1.0;    b= [ -1 0 0 ]';       a=[ 1  0 0 ]'; end
     if step==2; b0=1.5;    b=([ -4 1 0 ]')./2;   a=[ 2 -1 0 ]'; end
     if step>=3; b0=11./6.; b=([ -18 9 -2 ]')./6; a=[ 3 -3 1 ]'; end
-% 
-%     % Compute A
-    [A_x_full,A_y_full,A_xy_full] = form_Ax_Ay_Axy(N1,E,w1d,J,dpdx_dpdx_flat,dpdy_dpdy_flat,dpdx_dpdy_flat,Re_comb);
-    A_x = R*Q'*A_x_full*Q*R';
-    A_y = R*Q'*A_y_full*Q*R';
-    A_xy = R*Q'*A_xy_full*Q*R';
-    A_uv = zeros(2*nn);
-    A_uv(1:nn,1:nn) = 2*A_x+A_y+A_xy;
-    A_uv(nn+1:2*nn,nn+1:2*nn) = A_x+2*A_y+A_xy';
-    A_uv = sparse(A_uv);
+
+    if ~rans_on
+        % Compute A
+        [A_x_full,A_y_full,A_xy_full] = form_Ax_Ay_Axy(N1,E,w1d,J,dpdx_dpdx_flat,dpdy_dpdy_flat,dpdx_dpdy_flat,Re_comb);
+        A_x = R*Q'*A_x_full*Q*R';
+        A_y = R*Q'*A_y_full*Q*R';
+        A_xy = R*Q'*A_xy_full*Q*R';
+        A_uv = zeros(2*nn);
+        A_uv(1:nn,1:nn) = 2*A_x+A_y+A_xy;
+        A_uv(nn+1:2*nn,nn+1:2*nn) = A_x+2*A_y+A_xy';
+        A_uv = sparse(A_uv);
+    end
     
 %     if step>=3
         if en_on
-            A_full = 2*A_x_full+A_y_full+A_xy_full;
-            A_c=R*Q'*apply_en_cont(A_full,en_b_nodes,psi_p);
-%             H_x=(Ma + A*dt/(b0*Re) + dt/b0*(Mp_all{1} + Sp_all{1}));
-%             H_y=(Ma + A*dt/(b0*Re));
-%             [LH_x,UH_x]=lu(H_x);
-%             [LH_y,UH_y]=lu(H_y);
-            terms_x = 1/Re*(T1_all{1})+T2_all{1};
-            terms_y = 1/Re*(T1_all{2})+T2_all{2};
-            
-            T1_comp = 1/Re*reshape(T1_alt_all{1},nL,1);
-            [T1_new] = form_T1_psi(E,N,w1d,Jac_e_flat,dphi_dy_flat,gpsi_e_flat,Re_comb,N_en_y);
-            
-            T1_rhs = (dt/b0)*R*Q'*reshape(T1_new,nL,1);
-            
-            H_uv = (Ma_uv + (A_uv)*dt/(b0) + dt/b0*(Mp_uv + Sp_uv));
-            H_c = (M_c + (A_c)*dt/(b0) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
-%             H_q = full(H_uv);
-            rhs_c = (H_c);
-            [LH_uv,UH_uv]=lu(H_uv);
+%             A_full = 2*A_x_full+A_y_full+A_xy_full;
+%             A_c=R*Q'*apply_en_cont(A_full,en_b_nodes,psi_p);
+% 
+% %             H_x=(Ma + A*dt/(b0*Re) + dt/b0*(Mp_all{1} + Sp_all{1}));
+% %             H_y=(Ma + A*dt/(b0*Re));
+% %             [LH_x,UH_x]=lu(H_x);
+% %             [LH_y,UH_y]=lu(H_y);
+%             terms_x = 1/Re*(T1_all{1})+T2_all{1};
+%             terms_y = 1/Re*(T1_all{2})+T2_all{2};
+%             
+% %             T1_comp = 1/Re*reshape(T1_alt_all{1},nL,1);
+%             [T1_new] = form_T1_psi(E,N,w1d,Jac_e_flat,dphi_dy_flat,gpsi_e_flat,Re_comb,N_en_y);
+%             
+%             T1_rhs = (dt/b0)*R*Q'*reshape(T1_new,nL,1);
+%             
+%             H_uv = (Ma_uv + (A_uv)*dt/(b0) + dt/b0*(Mp_uv + Sp_uv));
+%             H_c = (M_c + (A_c)*dt/(b0) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
+%             if en_on == 2
+%                 H_uv = (Ma_uv + (A_uv)*dt/(b0*Re)); % + dt/b0*(Mp_uv + Sp_uv));
+%                 H_c = (M_c + (A_c)*dt/(b0*Re)); % + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
+%             end
+% %             H_q = full(H_uv);
+%             rhs_c = (H_c);
+%             [LH_uv,UH_uv]=lu(H_uv);
             
             if rans_on
                 [A_x_k,A_y_k] = form_Ax_Ay(N1,E,w1d,J,dpdx_dpdx_flat,dpdy_dpdy_flat,Re_k);
@@ -508,6 +531,10 @@ while step <= nstep
                 Ab_k = Q'*(A_x_k + A_y_k)*Q;
                 H_k=(Ma+A_k*dt/(b0)+dt/b0*Sp_all{1});
                 H_k_bar = (Q'*Bb*Q+ Ab_k*dt/(b0)+dt/b0*Sp_all_Q{1});
+                if en_on == 2
+                    H_k=(Ma+A_k*dt/(b0));%+dt/b0*Sp_all{1});
+                    H_k_bar = (Q'*Bb*Q+ Ab_k*dt/(b0));%+dt/b0*Sp_all_Q{1});
+                end
         
                 [LH_k,UH_k]=lu(H_k);
         
@@ -552,29 +579,154 @@ while step <= nstep
         
         b0i=1./b0;
 %     end % Viscous op
-    
 
-    
  
     %% uv version
     
 %   Nonlinear step - unassembled, not multiplied by mass matrix
-
+%     uv_0 = [u_rhs_0+rhs_c;v_rhs_0];
+%     uv_0=UH_uv\(LH_uv\uv_0);
+%     
+%     u_0 = uv_0(1:nn);
+%     v_0 = uv_0(nn+1:2*nn);
+%     u_0=Q*(R'*u_0);
+%     if en_on
+%         u_0 = apply_en_cont_soln(Ey,N_en_y,en_b_nodes,u_0,psi_p);
+%     end
+%     u_0=reshape(u_0,N1,N1,E);
+%     v_0=Q*(R'*v_0);
+%     v_0=reshape(v_0,N1,N1,E);
+    
+    %% Setup Convection terms and forcing terms
+    fx1 = -convl(u,RX,Dh,u,v); % + F; % du = Cu  
+    fy1 = -convl(v,RX,Dh,u,v); % dv = Cv
+    fk1 = -convl(k,RX,Dh,u,v) + G_k - Y_k + S_k; % dk = Ck
+    fomg1 = -convl(omg,RX,Dh,u,v) + G_omg - Y_omg + S_omg + R1 + R2 + R3; % domg = Comg
     fx1_0 = F;
     fy1_0 = zeros(size(F));
+    
+    if en_on == 2
+        en_u = dt/b0*Sp_full{1}*reshape(u,nL,1);
+        en_u = reshape(en_u,N1,N1,E);
+        en_v = dt/b0*Mp_full{2}*reshape(v,nL,1);
+        en_v = reshape(en_v,N1,N1,E);
+        
+        en_k = dt/b0*Sp_full{1}*reshape(k,nL,1);
+        en_k = reshape(en_k,N1,N1,E); 
+        en_omg = dt/b0*Sp_full{1}*reshape(omg,nL,1);
+        en_omg = reshape(en_omg,N1,N1,E); 
+        
+        fx1_0 = fx1_0 - en_u; % Is this right?
+        fy1 = fy1 - en_v;
+        fk1 = fk1 - en_k;
+        fomg1 = fomg1 - en_omg;
+    end
+    
+    %% Setup residual terms in bdf
+
+    rx   = a(1)*fx1   + a(2)*fx2   + a(3)*fx3; % kth-order extrapolation
+    ry   = a(1)*fy1   + a(2)*fy2   + a(3)*fy3;
+    rk   = a(1)*fk1   + a(2)*fk2   + a(3)*fk3;
+    romg = a(1)*fomg1 + a(2)*fomg2 + a(3)*fomg3;
     rx_0 = a(1)*fx1_0   + a(2)*fx2_0   + a(3)*fx3_0;
     ry_0 = a(1)*fy1_0   + a(2)*fy2_0   + a(3)*fy3_0;
+
+    fx3=fx2; fx2=fx1; 
+    fy3=fy2; fy2=fy1; 
+    fk3=fk2; fk2=fk1;
+    fomg3=fomg2; fomg2=fomg1;
     fx3_0=fx2_0; fx2_0=fx1_0; 
     fy3_0=fy2_0; fy2_0=fy1_0; 
+
+    %% Add residual terms to bdf
+    rx  = dt*rx - (b(1)*u+b(2)*u2+b(3)*u3); u3=u2; u2=u; % Add BDF terms
+    ry  = dt*ry - (b(1)*v+b(2)*v2+b(3)*v3); v3=v2; v2=v; %     and
+    rk  = dt*rk - (b(1)*k+b(2)*k2+b(3)*k3); k3=k2; k2=k;
+    romg = dt*romg - (b(1)*omg+b(2)*omg2+b(3)*omg3); omg3=omg2; omg2=omg;
     rx_0  = dt*rx_0 - (b(1)*u_0+b(2)*u2_0+b(3)*u3_0); u3_0=u2_0; u2_0=u_0; % Add BDF terms
     ry_0  = dt*ry_0 - (b(1)*v_0+b(2)*v2_0+b(3)*v3_0); v3_0=v2_0; v2_0=v_0; % Add BDF terms
+    
+    ut  = b0i*rx; 
+    vt  = b0i*ry; 
+    k   = b0i*rk;
+    omg = b0i*romg;
     ut_0  = b0i*rx_0; 
     vt_0  = b0i*ry_0; 
+
+%   uL=ut; vL=vt;
+    [uL,vL,pr]=pressure_project(ut,vt,Ai,Q,ML,RX,Dh); % Div-free velocity
     [uL_0,vL_0,pr_0]=pressure_project(ut_0,vt_0,Ai,Q,ML,RX,Dh); % Div-free velocity
+    pr = (b0/dt)*pr;
     pr_0 = (b0/dt)*pr_0;
+    
+
+    %%
+
+    %   Set RHS.                 %Viscous update. %  Convert to local form.
+%     u=R*(Q'*reshape(ML.*uL,nL,1)-Hbar*u_bc);
+    u_rhs=R*(Q'*reshape(ML.*uL,nL,1));
+    v_rhs=R*(Q'*reshape(ML.*vL,nL,1));
     u_rhs_0=R*(Q'*reshape(ML.*uL_0,nL,1));
     v_rhs_0=R*(Q'*reshape(ML.*vL_0,nL,1));
-    u_rhs_0 = u_rhs_0 + T1_rhs;
+    
+    if rans_on
+        k_rhs=R*(Q'*reshape(ML.*k,nL,1));%-H_k_bar*k_bc);
+        omg_rhs=R*(Q'*reshape(ML.*omg,nL,1));%-H_omg_bar*omg_bc);
+    end
+    
+    %%
+    
+    % Solve k and omg first
+    if rans_on
+        k = UH_k\(LH_k\k_rhs);
+        omg = UH_omg\(LH_omg\omg_rhs);
+        k=Q*(R'*k);%+k_bc);
+        omg=Q*(R'*omg);%+omg_bc);
+        k=reshape(k,N1,N1,E);
+        omg=reshape(omg,N1,N1,E);
+        mu_t = rho.*k./(omg_w+omg);
+        
+        % recompute matrices for uv 
+        Re_t = rho./(mu_t+eps);
+        Re_comb = rho./(mu*ones(size(mu_t))+mu_t*rans_on);
+        
+        [A_x_full,A_y_full,A_xy_full] = form_Ax_Ay_Axy(N1,E,w1d,J,dpdx_dpdx_flat,dpdy_dpdy_flat,dpdx_dpdy_flat,Re_comb);
+        A_x = R*Q'*A_x_full*Q*R';
+        A_y = R*Q'*A_y_full*Q*R';
+        A_xy = R*Q'*A_xy_full*Q*R';
+        A_uv = zeros(2*nn);
+        A_uv(1:nn,1:nn) = 2*A_x+A_y+A_xy;
+        A_uv(nn+1:2*nn,nn+1:2*nn) = A_x+2*A_y+A_xy';
+        A_uv = sparse(A_uv);
+                
+        H_uv = (Ma_uv + (A_uv)*dt/(b0));
+        %             H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re));
+        rhs_c = zeros(size(Ma(:,1)));
+        [LH_uv,UH_uv]=lu(H_uv);
+        
+        if en_on           
+            A_full = 2*A_x_full+A_y_full+A_xy_full;
+            A_c=R*Q'*apply_en_cont(A_full,en_b_nodes,psi_p);
+            [T1_new] = form_T1_psi(E,N,w1d,Jac_e_flat,dphi_dy_flat,gpsi_e_flat,Re_comb,N_en_y);
+            T1_rhs = (dt/b0)*R*Q'*reshape(T1_new,nL,1);
+            
+            H_uv = (Ma_uv + (A_uv)*dt/(b0) + dt/b0*(Mp_uv + Sp_uv));
+            H_c = (M_c + (A_c)*dt/(b0) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
+            if en_on == 2
+                H_uv = (Ma_uv + (A_uv)*dt/(b0*Re)); % + dt/b0*(Mp_uv + Sp_uv));
+                H_c = (M_c + (A_c)*dt/(b0*Re)); % + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
+            end
+%             H_q = full(H_uv);
+            rhs_c = (H_c);
+            [LH_uv,UH_uv]=lu(H_uv);
+        end
+    end
+    
+    
+    u_rhs = u_rhs + T1_rhs;
+    u_rhs_0 = u_rhs_0;% + T1_rhs;
+    
+    %% Solve for u_0, v_0, p_0
     uv_0 = [u_rhs_0+rhs_c;v_rhs_0];
     uv_0=UH_uv\(LH_uv\uv_0);
     
@@ -588,90 +740,11 @@ while step <= nstep
     v_0=Q*(R'*v_0);
     v_0=reshape(v_0,N1,N1,E);
     
-    %%
-
-    fx1 = -convl(u,RX,Dh,u,v); % + F; % du = Cu  
-    fy1 = -convl(v,RX,Dh,u,v); % dv = Cv
-    fk1 = -convl(k,RX,Dh,u,v) + G_k - Y_k + S_k; % dk = Ck
-    fomg1 = -convl(omg,RX,Dh,u,v) + G_omg - Y_omg + S_omg + R1 + R2 + R3; % domg = Comg
     
-    %%
-
-    rx   = a(1)*fx1   + a(2)*fx2   + a(3)*fx3; % kth-order extrapolation
-    ry   = a(1)*fy1   + a(2)*fy2   + a(3)*fy3;
-    rk   = a(1)*fk1   + a(2)*fk2   + a(3)*fk3;
-    romg = a(1)*fomg1 + a(2)*fomg2 + a(3)*fomg3;
-
-    fx3=fx2; fx2=fx1; 
-    fy3=fy2; fy2=fy1; 
-    fk3=fk2; fk2=fk1;
-    fomg3=fomg2; fomg2=fomg1;
-
-    rx  = dt*rx - (b(1)*u+b(2)*u2+b(3)*u3); u3=u2; u2=u; % Add BDF terms
-    ry  = dt*ry - (b(1)*v+b(2)*v2+b(3)*v3); v3=v2; v2=v; %     and
-    rk  = dt*rk - (b(1)*k+b(2)*k2+b(3)*k3); k3=k2; k2=k;
-    romg = dt*romg - (b(1)*omg+b(2)*omg2+b(3)*omg3); omg3=omg2; omg2=omg;
-    
-    ut  = b0i*rx; 
-    vt  = b0i*ry; 
-    k   = b0i*rk;
-    omg = b0i*romg;
-
-%   uL=ut; vL=vt;
-    [uL,vL,pr]=pressure_project(ut,vt,Ai,Q,ML,RX,Dh); % Div-free velocity
-    pr = (b0/dt)*pr;
-    
-
-    %%
-
-    %   Set RHS.                 %Viscous update. %  Convert to local form.
-%     u=R*(Q'*reshape(ML.*uL,nL,1)-Hbar*u_bc);
-    u_rhs=R*(Q'*reshape(ML.*uL,nL,1));
-    v_rhs=R*(Q'*reshape(ML.*vL,nL,1));
-    
-    if rans_on
-        k_rhs=R*(Q'*reshape(ML.*k,nL,1));%-H_k_bar*k_bc);
-        omg_rhs=R*(Q'*reshape(ML.*omg,nL,1));%-H_omg_bar*omg_bc);
-    end
-    
-    u_rhs = u_rhs + T1_rhs;
-    
-    %%
-    
-    % Solve k and omg first
-    if rans_on
-        k = UH_k\(LH_k\k_rhs);
-        omg = UH_omg\(LH_omg\omg_rhs);
-        k=Q*(R'*k);%+k_bc);
-        omg=Q*(R'*omg);%+omg_bc);
-        k=reshape(k,N1,N1,E);
-        omg=reshape(omg,N1,N1,E);
-%         mu_t = rho.*k./(omg_w+omg);
-%         
-%         % recompute matrices for uv 
-%         Re_t = rho./(mu_t+eps);
-%         Re_comb = rho./(mu*ones(size(mu_t))+mu_t*rans_on);
-%         
-%         [A_x_full,A_y_full,A_xy_full] = form_Ax_Ay_Axy(N1,E,w1d,J,dpdx_dpdx_flat,dpdy_dpdy_flat,dpdx_dpdy_flat,Re_comb);
-%         A_x = R*Q'*A_x_full*Q*R';
-%         A_y = R*Q'*A_y_full*Q*R';
-%         A_xy = R*Q'*A_xy_full*Q*R';
-%         A_uv = zeros(2*nn);
-%         A_uv(1:nn,1:nn) = 2*A_x+A_y+A_xy;
-%         A_uv(nn+1:2*nn,nn+1:2*nn) = A_x+2*A_y+A_xy';
-%         A_uv = sparse(A_uv);
-%         
-%         H_uv = (Ma_uv + (A_uv)*dt/(b0));
-%         %             H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re));
-%         rhs_c = zeros(size(Ma(:,1)));
-%         [LH_uv,UH_uv]=lu(H_uv);
-    end
-    
+    %% Solve for u', v', p'
     uv = [u_rhs+rhs_c;v_rhs];
-    uv=UH_uv\(LH_uv\uv);
- 
-
-    
+    uv=UH_uv\(LH_uv\uv); 
+   
     u = uv(1:nn);
     v = uv(nn+1:2*nn);
     u=Q*(R'*u);
@@ -682,10 +755,16 @@ while step <= nstep
     v=Q*(R'*v);
     v=reshape(v,N1,N1,E);
     
-    
+    %% Add in forcing term
+    u_comb = u;
+    u_0_combo = u_0;
+    if en_on
+        u_comb = u+psi_xy_act{1};
+        u_0_comb = u_0+psi_xy_act{1};
+    end
     % Integrate domain
-    avg_u = sum(u.*w2d_e,'All')/dom_vol;
-    avg_u_0 = sum(u_0.*w2d_e,'All')/dom_vol;
+    avg_u = sum(u_comb.*w2d_e,'All')/dom_vol;
+    avg_u_0 = sum(u_0_comb.*w2d_e,'All')/dom_vol;
     alpha_0 = (1-avg_u)/avg_u_0;
     
     u = u + alpha_0*u_0;
