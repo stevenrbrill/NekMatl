@@ -223,8 +223,16 @@ G_uv = sparse(G_uv);
 %% Assemble enrichment matrices
 psi_xy{1} = psi{1}(X,Y);
 psi_xy{2} = psi{2}(X,Y);
+gpsi_xy{1} = gpsi{1}(X,Y);
+gpsi_xy{2} = gpsi{2}(X,Y);
+gpsi_xy{3} = gpsi{3}(X,Y);
+gpsi_xy{4} = gpsi{4}(X,Y);
 psi_xy_act{1} = zeros(size(X));
 psi_xy_act{2} = zeros(size(X));
+gpsi_xy_act{1} = zeros(size(X));
+gpsi_xy_act{2} = zeros(size(X));
+gpsi_xy_act{3} = zeros(size(X));
+gpsi_xy_act{4} = zeros(size(X));
 if en_on
     for iy = 1:Ey
         for ix = 1:Ex
@@ -232,6 +240,10 @@ if en_on
                 i = (iy-1)*Ex+ix;
                 psi_xy_act{1}(:,:,i) = psi_xy{1}(:,:,i);
                 psi_xy_act{2}(:,:,i) = psi_xy{2}(:,:,i);
+                gpsi_xy_act{1}(:,:,i) = gpsi_xy{1}(:,:,i);
+                gpsi_xy_act{2}(:,:,i) = gpsi_xy{2}(:,:,i);
+                gpsi_xy_act{3}(:,:,i) = gpsi_xy{3}(:,:,i);
+                gpsi_xy_act{4}(:,:,i) = gpsi_xy{4}(:,:,i);
             end
         end
     end
@@ -333,7 +345,7 @@ end
 dxmin=pi*(z(N1)-z(N))/(2*Ex); % Get min dx for CFL constraint
 dt=CFL*dxmin/u_ic; 
 
-dt = 1e-3;
+% dt = 1e-3;
 nstep=ceil(Tfinal/dt); 
 dt=Tfinal/nstep; 
 % Print information
@@ -410,7 +422,6 @@ omg_bc = omg_bc_val.*ones(size(omg));
 omg_bc = reshape(ML.*omg_bc,nL,1);
 omg_bc = (Q'*Bb*Q)\(Q'*omg_bc);
 
-avg_u = sum(u.*w2d_e,'All')/dom_vol;
 %%
 disp("Timestepping")
 step = 1;
@@ -433,7 +444,11 @@ end
 % psi_c(psi_len/2+1:psi_len) = 1*ones(psi_len/2,1)*psi_p;
 
 while step <= nstep
-    
+    % Form combined u for RANS terms
+    u_comb = u;
+    if en_on
+        u_comb = u+psi_xy_act{1};
+    end
     
     %% Form S
     u_flat = reshape(u,N1*N1,E);
@@ -454,10 +469,10 @@ while step <= nstep
     end
     
     if en_on
-        dudx = dudx + gpsi_e{1};
-        dudy = dudy + gpsi_e{2};
-        dvdx = dvdx + gpsi_e{3}; % Doesn't matter given assumptions
-        dvdy = dvdy + gpsi_e{4}; % Doesn't matter given assumptions
+        dudx = dudx + gpsi_xy_act{1};
+        dudy = dudy + gpsi_xy_act{2};
+        dvdx = dvdx + gpsi_xy_act{3}; % Doesn't matter given assumptions
+        dvdy = dvdy + gpsi_xy_act{4}; % Doesn't matter given assumptions
     end
     
     SS(:,:,:,1,1) = 1/2*(dudx+dudx);
@@ -472,7 +487,7 @@ while step <= nstep
 
     %% Get rans values
     [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg,R1,R2,R3,omg_w] ...
-        = get_rans_coeffs(rho,mu,k,omg,SS,OS,dkdx,dkdy,domgdx,domgdy,Y,u,v);
+        = get_rans_coeffs(rho,mu,k,omg,SS,OS,dkdx,dkdy,domgdx,domgdy,Y,u_comb,v);
     if ~rans_on
         mu_t = zeros(size(mu_t));
     end
@@ -496,6 +511,25 @@ while step <= nstep
         A_uv(1:nn,1:nn) = 2*A_x+A_y+A_xy;
         A_uv(nn+1:2*nn,nn+1:2*nn) = A_x+2*A_y+A_xy';
         A_uv = sparse(A_uv);
+        
+        T1_rhs = 0;
+        
+        if en_on
+            A_full = 2*A_x_full+A_y_full+A_xy_full;
+            A_c=R*Q'*apply_en_cont(A_full,en_b_nodes,psi_p);
+            [T1_new] = form_T1_psi(E,N,w1d,Jac_e_flat,dphi_dy_flat,gpsi_e_flat,Re_comb,N_en_y);
+            T1_rhs = (dt/b0)*R*Q'*reshape(T1_new,nL,1);
+            
+            H_uv = (Ma_uv + (A_uv)*dt/(b0) + dt/b0*(Mp_uv + Sp_uv));
+            H_c = (M_c + (A_c)*dt/(b0) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
+            if en_on == 2
+                H_uv = (Ma_uv + (A_uv)*dt/(b0*Re)); % + dt/b0*(Mp_uv + Sp_uv));
+                H_c = (M_c + (A_c)*dt/(b0*Re)); % + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
+            end
+            %             H_q = full(H_uv);
+            rhs_c = (H_c);
+            [LH_uv,UH_uv]=lu(H_uv);
+        end
     end
     
 %     if step>=3
@@ -724,7 +758,7 @@ while step <= nstep
     
     
     u_rhs = u_rhs + T1_rhs;
-    u_rhs_0 = u_rhs_0;% + T1_rhs;
+    u_rhs_0 = u_rhs_0 + T1_rhs;
     
     %% Solve for u_0, v_0, p_0
     uv_0 = [u_rhs_0+rhs_c;v_rhs_0];
@@ -757,7 +791,7 @@ while step <= nstep
     
     %% Add in forcing term
     u_comb = u;
-    u_0_combo = u_0;
+    u_0_comb = u_0;
     if en_on
         u_comb = u+psi_xy_act{1};
         u_0_comb = u_0+psi_xy_act{1};
@@ -768,6 +802,11 @@ while step <= nstep
     alpha_0 = (1-avg_u)/avg_u_0;
     
     u = u + alpha_0*u_0;
+    u_comb = u_comb + alpha_0*u_comb;
+    u =  u_comb;
+    if en_on
+    u = u_comb - psi_xy_act{1};
+    end
     v = v + alpha_0*v_0;
     pr = pr + alpha_0*pr_0;
         
