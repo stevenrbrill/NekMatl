@@ -30,16 +30,16 @@ N=4; % polynomial order
 Ex=1; % Number of elements in x
 Ey=10; % Number of elements in y
 Tfinal=300; 
-CFL=20;
+CFL=100;
 
 rans_on = 1;
 exp_mesh = 0;
 
-soln_dir = "re10000";
+soln_dir = "en_method1";
 plot_soln = 1;
-save_soln = 0;
-plot_int = 100;
-save_soln_int = 1000;
+save_soln = 1;
+plot_int = 5000;
+save_soln_int = 5000;
 restart = 0;
 rst_step = 300000;
 
@@ -49,14 +49,14 @@ f_ic = @(x,y) 3/2*(1-y.^2);
 % f_ic = @(x,y) 20*(1-y.^8);
 
 %% Enrichment information
-en_on = 2;
+en_on = 1;
 N_en_y = 1; 
-en_mag = 10;
-% psi = {@(x,y) en_mag*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
-% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1.*y + 0.*x), ...
-%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
-%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+en_mag = 3;
+psi = {@(x,y) en_mag*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
+gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1.*y + 0.*x), ...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
     
 % psi = {@(x,y) (0.5*(1 - y.^4) + 0.*x), @(x,y) 0.*y + 0.*x};
 % gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) (-2.*y.^3 + 0.*x), ...
@@ -78,7 +78,7 @@ ypb = 11.062299784340414;
 yp = @(y) (1-abs(y))*Re_t;
 lotw = @(yp) (yp <= ypb).*yp + (yp > ypb).*(1./kap.*log(yp+eps)+beta);
 psi = {@(x,y) u_tau*((yp(y) <= ypb).*yp(y) + (yp(y) > ypb).*(1./kap.*log(yp(y)+eps)+beta) + 0.*x), @(x,y) 0.*y + 0.*x};
-gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) u_tau*(((yp(y) <= ypb).*1 + (yp(y) > ypb).*1/(kap*(yp(y)+eps)))*dypdy + 0.*x),...
+gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) u_tau*(((yp(y) <= ypb).*1 + (yp(y) > ypb).*1./(kap*(yp(y)+eps)))*dypdy + 0.*x),...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) u_tau*(((yp(y) <= ypb).*0 + (yp(y) > ypb).*-1./(kap*(yp(y)+eps).^2))*dypdy*dypdy + 0.*x),...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
@@ -640,8 +640,10 @@ while step <= nstep
     fy1_0 = zeros(size(F));
     
     if en_on == 2
-        en_u = dt/b0*Sp_full{1}*reshape(u,nL,1);
+        en_u = dt/b0*((Sp_full{1}+Mp_full{1})*reshape(u,nL,1)+Mp_full{2}*reshape(v,nL,1));
         en_u = reshape(en_u,N1,N1,E);
+        en_u_0 = dt/b0*((Sp_full{1}+Mp_full{1})*reshape(u_0,nL,1)+Mp_full{2}*reshape(v_0,nL,1));
+        en_u_0 = reshape(en_u_0,N1,N1,E);
         en_v = dt/b0*Mp_full{2}*reshape(v,nL,1);
         en_v = reshape(en_v,N1,N1,E);
         
@@ -650,7 +652,10 @@ while step <= nstep
         en_omg = dt/b0*Sp_full{1}*reshape(omg,nL,1);
         en_omg = reshape(en_omg,N1,N1,E); 
         
-        fx1_0 = fx1_0 - en_u; % Is this right?
+        
+        % SRB
+        fx1 = fx1 - en_u;
+        fx1_0 = fx1_0;% - en_u_0; 
         fy1 = fy1 - en_v;
         fk1 = fk1 - en_k;
         fomg1 = fomg1 - en_omg;
@@ -756,32 +761,36 @@ while step <= nstep
         end
     end
     
-    
+    % SRB
     u_rhs = u_rhs + T1_rhs;
-    u_rhs_0 = u_rhs_0 + T1_rhs;
+    u_rhs_0 = u_rhs_0;% + T1_rhs;
     
     %% Solve for u_0, v_0, p_0
-    uv_0 = [u_rhs_0+rhs_c;v_rhs_0];
+    % SRB
+    uv_0 = [u_rhs_0;v_rhs_0];
     uv_0=UH_uv\(LH_uv\uv_0);
     
     u_0 = uv_0(1:nn);
     v_0 = uv_0(nn+1:2*nn);
     u_0=Q*(R'*u_0);
-    if en_on
-        u_0 = apply_en_cont_soln(Ey,N_en_y,en_b_nodes,u_0,psi_p);
-    end
+    %SRB
+%     if en_on
+%         u_0 = apply_en_cont_soln(Ey,N_en_y,en_b_nodes,u_0,psi_p);
+%     end
     u_0=reshape(u_0,N1,N1,E);
     v_0=Q*(R'*v_0);
     v_0=reshape(v_0,N1,N1,E);
     
     
     %% Solve for u', v', p'
+    %SRB
     uv = [u_rhs+rhs_c;v_rhs];
     uv=UH_uv\(LH_uv\uv); 
    
     u = uv(1:nn);
     v = uv(nn+1:2*nn);
     u=Q*(R'*u);
+    %SRB
     if en_on
         u = apply_en_cont_soln(Ey,N_en_y,en_b_nodes,u,psi_p);
     end
@@ -794,22 +803,23 @@ while step <= nstep
     u_0_comb = u_0;
     if en_on
         u_comb = u+psi_xy_act{1};
-        u_0_comb = u_0+psi_xy_act{1};
+%         u_0_comb = u_0+psi_xy_act{1};
     end
     % Integrate domain
     avg_u = sum(u_comb.*w2d_e,'All')/dom_vol;
     avg_u_0 = sum(u_0_comb.*w2d_e,'All')/dom_vol;
     alpha_0 = (1-avg_u)/avg_u_0;
     
+    % SRB 
     u = u + alpha_0*u_0;
-    u_comb = u_comb + alpha_0*u_comb;
-    u =  u_comb;
-    if en_on
-    u = u_comb - psi_xy_act{1};
-    end
+%     u_comb = u_comb + alpha_0*u_comb;
+%     u =  u_comb;
+%     if en_on
+%         u = u_comb - psi_xy_act{1};
+%     end
     v = v + alpha_0*v_0;
     pr = pr + alpha_0*pr_0;
-        
+    
     
 %% Output
     if mod(step,plot_int)==0 && plot_soln
