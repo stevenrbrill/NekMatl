@@ -78,7 +78,7 @@ ypb = 11.062299784340414;
 yp = @(y) (1-abs(y))*Re_t;
 lotw = @(yp) (yp <= ypb).*yp + (yp > ypb).*(1./kap.*log(yp+eps)+beta);
 psi = {@(x,y) u_tau*((yp(y) <= ypb).*yp(y) + (yp(y) > ypb).*(1./kap.*log(yp(y)+eps)+beta) + 0.*x), @(x,y) 0.*y + 0.*x};
-gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) u_tau*(((yp(y) <= ypb).*1 + (yp(y) > ypb).*1./(kap*(yp(y)+eps)))*dypdy + 0.*x),...
+gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) -1*sign(y).*u_tau.*(((yp(y) <= ypb).*1 + (yp(y) > ypb).*1./(kap*(yp(y)+eps)))*dypdy + 0.*x),...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) u_tau*(((yp(y) <= ypb).*0 + (yp(y) > ypb).*-1./(kap*(yp(y)+eps).^2))*dypdy*dypdy + 0.*x),...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
@@ -691,8 +691,12 @@ while step <= nstep
     omg = b0i*romg;
     ut_0  = b0i*rx_0; 
     vt_0  = b0i*ry_0; 
-
+% 
 %   uL=ut; vL=vt;
+%   uL_0=ut_0;
+%   vL_0=vt_0;
+%   pr =0;
+%   pr_0 = 0;
     [uL,vL,pr]=pressure_project(ut,vt,Ai,Q,ML,RX,Dh); % Div-free velocity
     [uL_0,vL_0,pr_0]=pressure_project(ut_0,vt_0,Ai,Q,ML,RX,Dh); % Div-free velocity
     pr = (b0/dt)*pr;
