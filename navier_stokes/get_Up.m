@@ -21,10 +21,11 @@ function [Yp,Up] = get_Up(Y,U,u_tau,mu,lotw,Ey,N,psi)
     Up_sample = u_sample/u_tau;
     
     figure
-    semilogx(Yp,Up,'b-o')
+    semilogx(Yp_sample,lotw(Yp_sample),'k-')
     hold on
-    semilogx(Yp_sample,lotw(Yp_sample),'k--')
     semilogx(Yp_sample,Up_sample,'r--')
+    semilogx(Yp,Up,'bo')
+    legend('Law of the Wall','Subsampled Solution','Nodal Values')
     
 
 end
