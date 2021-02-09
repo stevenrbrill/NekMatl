@@ -1,7 +1,7 @@
 function [Yp,Up] = get_Up(Y,U,u_tau,mu,lotw,Ey,N,psi)
 
     U_poly = U-psi{1}(0,Y);
-    N_sample = 100;
+    N_sample = 1000;
     for i = 1:Ey
         basis = get_nodal_basis_coeffs(Y((N+1)*(i-1)+1:(N+1)*(i)));
         y_sample((N_sample)*(i-1)+1:(N_sample)*(i)) = linspace(Y((N+1)*(i-1)+1),Y((N+1)*(i)),N_sample);

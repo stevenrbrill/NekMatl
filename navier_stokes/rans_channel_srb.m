@@ -28,18 +28,18 @@ omg_bc_val = 0;
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
 N=4; % polynomial order  
 Ex=1; % Number of elements in x
-Ey=10; % Number of elements in y
+Ey=8; % Number of elements in y
 Tfinal=300; 
 CFL=100;
 
 rans_on = 1;
 exp_mesh = 0;
 
-soln_dir = "en_method1";
+soln_dir = "en_re100000_Ey8_2";
 plot_soln = 1;
 save_soln = 1;
-plot_int = 5000;
-save_soln_int = 5000;
+plot_int = 10000;
+save_soln_int = 10000;
 restart = 0;
 rst_step = 300000;
 
