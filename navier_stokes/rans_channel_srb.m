@@ -742,10 +742,12 @@ while step <= nstep
         A_uv(nn+1:2*nn,nn+1:2*nn) = A_x+2*A_y+A_xy';
         A_uv = sparse(A_uv);
                 
-        H_uv = (Ma_uv + (A_uv)*dt/(b0));
-        %             H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re));
-        rhs_c = zeros(size(Ma(:,1)));
-        [LH_uv,UH_uv]=lu(H_uv);
+        if ~en_on
+            H_uv = (Ma_uv + (A_uv)*dt/(b0));
+            %             H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re));
+            rhs_c = zeros(size(Ma(:,1)));
+            [LH_uv,UH_uv]=lu(H_uv);
+        end
         
         if en_on           
             A_full = 2*A_x_full+A_y_full+A_xy_full;
@@ -753,8 +755,10 @@ while step <= nstep
             [T1_new] = form_T1_psi(E,N,w1d,Jac_e_flat,dphi_dy_flat,gpsi_e_flat,Re_comb,N_en_y);
             T1_rhs = (dt/b0)*R*Q'*reshape(T1_new,nL,1);
             
-            H_uv = (Ma_uv + (A_uv)*dt/(b0) + dt/b0*(Mp_uv + Sp_uv));
-            H_c = (M_c + (A_c)*dt/(b0) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
+            if en_on == 1
+                H_uv = (Ma_uv + (A_uv)*dt/(b0) + dt/b0*(Mp_uv + Sp_uv));
+                H_c = (M_c + (A_c)*dt/(b0) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
+            end
             if en_on == 2
                 H_uv = (Ma_uv + (A_uv)*dt/(b0*Re)); % + dt/b0*(Mp_uv + Sp_uv));
                 H_c = (M_c + (A_c)*dt/(b0*Re)); % + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
