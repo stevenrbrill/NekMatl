@@ -25,7 +25,6 @@ dpdx = 1;
 k_bc_val = 0;
 omg_bc_val = 0;
 
-%N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
 N=4; % polynomial order  
 Ex=1; % Number of elements in x
 Ey=8; % Number of elements in y
@@ -46,7 +45,6 @@ rst_step = 300000;
 u_ic = Re;
 pert = 0.0;
 f_ic = @(x,y) 3/2*(1-y.^2);
-% f_ic = @(x,y) 20*(1-y.^8);
 
 %% Enrichment information
 en_on = 1;
@@ -157,17 +155,6 @@ w2d_e = zeros(N+1,N+1,E);
 for ie = 1:E
     w2d_e(:,:,ie) = w2d*L_x(ie)/2*L_y(ie)/2;
 end
-
-% myA = zeros(N1*N1*E);
-% for ie=1:E
-%     for i=1:N1*N1
-%         for j=1:N1*N1
-%             myA((ie-1)*N1*N1+i,(ie-1)*N1*N1+j) = ... 
-%                 sum(J(:,:,ie).*w2d.*dpdx_dpdx(:,:,i,j,ie) ...
-%                + J(:,:,ie).*w2d.*dpdy_dpdy(:,:,i,j,ie),'All');           
-%         end
-%     end    
-% end
 
 A_x = form_Ax(N1,E,w2d,J_x,J,dpdx_dpdx,ones(size(J)));
 A_y = form_Ay(N1,E,w2d,J_y,J,dpdy_dpdy,ones(size(J)));
@@ -380,15 +367,13 @@ end
 
 darcy = 0.316./(Re.^0.25);
 u_tau = sqrt(darcy/8);
-% u_tau = 1;
-% u_tau = sqrt(0.316./(Re.^0.25)/8);
 Yp = max((1-abs(Y))*u_tau*Re,1e-3)+eps;
 sigma = 0.6;
 fact = exp((-(log10(Yp)-1).^2)./(2*sigma.^2));
 k = k_bc_val + 4.5*u_tau*u_tau*fact;
 
 eps_s = 3;
-omg_bc_val = 0; %40000*u_tau.^2/(mu*eps_s.^2);
+omg_bc_val = 0; 
 omg = omg_bc_val + 0.5*Re*u_tau*u_tau*fact;
 
 % u = apply_en_cont_soln(u,en_b_nodes,psi_p);
@@ -437,12 +422,8 @@ plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,step,time,u,psi_xy,N_en_y,plot1);
 if save_soln
     mkdir(soln_dir);
 end
-%%
-% psi_len = length(M_c);
-% psi_c = zeros(psi_len,1);
-% psi_c(1:psi_len/2) = -1*ones(psi_len/2,1)*psi_p;
-% psi_c(psi_len/2+1:psi_len) = 1*ones(psi_len/2,1)*psi_p;
 
+%%
 while step <= nstep
     % Form combined u for RANS terms
     u_comb = u;
@@ -533,32 +514,7 @@ while step <= nstep
     end
     
 %     if step>=3
-        if en_on
-%             A_full = 2*A_x_full+A_y_full+A_xy_full;
-%             A_c=R*Q'*apply_en_cont(A_full,en_b_nodes,psi_p);
-% 
-% %             H_x=(Ma + A*dt/(b0*Re) + dt/b0*(Mp_all{1} + Sp_all{1}));
-% %             H_y=(Ma + A*dt/(b0*Re));
-% %             [LH_x,UH_x]=lu(H_x);
-% %             [LH_y,UH_y]=lu(H_y);
-%             terms_x = 1/Re*(T1_all{1})+T2_all{1};
-%             terms_y = 1/Re*(T1_all{2})+T2_all{2};
-%             
-% %             T1_comp = 1/Re*reshape(T1_alt_all{1},nL,1);
-%             [T1_new] = form_T1_psi(E,N,w1d,Jac_e_flat,dphi_dy_flat,gpsi_e_flat,Re_comb,N_en_y);
-%             
-%             T1_rhs = (dt/b0)*R*Q'*reshape(T1_new,nL,1);
-%             
-%             H_uv = (Ma_uv + (A_uv)*dt/(b0) + dt/b0*(Mp_uv + Sp_uv));
-%             H_c = (M_c + (A_c)*dt/(b0) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
-%             if en_on == 2
-%                 H_uv = (Ma_uv + (A_uv)*dt/(b0*Re)); % + dt/b0*(Mp_uv + Sp_uv));
-%                 H_c = (M_c + (A_c)*dt/(b0*Re)); % + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
-%             end
-% %             H_q = full(H_uv);
-%             rhs_c = (H_c);
-%             [LH_uv,UH_uv]=lu(H_uv);
-            
+        if en_on          
             if rans_on
                 [A_x_k,A_y_k] = form_Ax_Ay(N1,E,w1d,J,dpdx_dpdx_flat,dpdy_dpdy_flat,Re_k);
                 A_k = R*Q'*(A_x_k + A_y_k)*Q*R';
@@ -566,8 +522,8 @@ while step <= nstep
                 H_k=(Ma+A_k*dt/(b0)+dt/b0*Sp_all{1});
                 H_k_bar = (Q'*Bb*Q+ Ab_k*dt/(b0)+dt/b0*Sp_all_Q{1});
                 if en_on == 2
-                    H_k=(Ma+A_k*dt/(b0));%+dt/b0*Sp_all{1});
-                    H_k_bar = (Q'*Bb*Q+ Ab_k*dt/(b0));%+dt/b0*Sp_all_Q{1});
+                    H_k=(Ma+A_k*dt/(b0));
+                    H_k_bar = (Q'*Bb*Q+ Ab_k*dt/(b0));
                 end
         
                 [LH_k,UH_k]=lu(H_k);
@@ -579,21 +535,14 @@ while step <= nstep
                 UH_omg = UH_k;
             end
         else
-%             H=(Ma + A*dt/(b0*Re));
-%             [LH_x,UH_x]=lu(H);
-%             LH_y = LH_x;
-%             UH_y = UH_x;
-
             terms_x = zeros(N+1,N+1,E);
             terms_y = zeros(N+1,N+1,E);
             T1_rhs = 0;
             
             H_uv = (Ma_uv + (A_uv)*dt/(b0));
-%             H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re)); 
             rhs_c = zeros(size(Ma(:,1)));
             [LH_uv,UH_uv]=lu(H_uv);
             
-%             Hbar=(Bb+ Ab*dt/(b0*Re));
             if rans_on
                 [A_x_k,A_y_k] = form_Ax_Ay(N1,E,w1d,J,dpdx_dpdx_flat,dpdy_dpdy_flat,Re_k);
                 A_k = R*Q'*(A_x_k + A_y_k)*Q*R';
@@ -614,23 +563,8 @@ while step <= nstep
         b0i=1./b0;
 %     end % Viscous op
 
- 
-    %% uv version
     
-%   Nonlinear step - unassembled, not multiplied by mass matrix
-%     uv_0 = [u_rhs_0+rhs_c;v_rhs_0];
-%     uv_0=UH_uv\(LH_uv\uv_0);
-%     
-%     u_0 = uv_0(1:nn);
-%     v_0 = uv_0(nn+1:2*nn);
-%     u_0=Q*(R'*u_0);
-%     if en_on
-%         u_0 = apply_en_cont_soln(Ey,N_en_y,en_b_nodes,u_0,psi_p);
-%     end
-%     u_0=reshape(u_0,N1,N1,E);
-%     v_0=Q*(R'*v_0);
-%     v_0=reshape(v_0,N1,N1,E);
-    
+%   Nonlinear step - unassembled, not multiplied by mass matrix   
     %% Setup Convection terms and forcing terms
     fx1 = -convl(u,RX,Dh,u,v); % + F; % du = Cu  
     fy1 = -convl(v,RX,Dh,u,v); % dv = Cv
@@ -691,12 +625,7 @@ while step <= nstep
     omg = b0i*romg;
     ut_0  = b0i*rx_0; 
     vt_0  = b0i*ry_0; 
-% 
-%   uL=ut; vL=vt;
-%   uL_0=ut_0;
-%   vL_0=vt_0;
-%   pr =0;
-%   pr_0 = 0;
+ 
     [uL,vL,pr]=pressure_project(ut,vt,Ai,Q,ML,RX,Dh); % Div-free velocity
     [uL_0,vL_0,pr_0]=pressure_project(ut_0,vt_0,Ai,Q,ML,RX,Dh); % Div-free velocity
     pr = (b0/dt)*pr;
@@ -744,7 +673,6 @@ while step <= nstep
                 
         if ~en_on
             H_uv = (Ma_uv + (A_uv)*dt/(b0));
-            %             H_check = (Ma_uv_check + A_uv_check*dt/(b0*Re));
             rhs_c = zeros(size(Ma(:,1)));
             [LH_uv,UH_uv]=lu(H_uv);
         end
@@ -760,10 +688,9 @@ while step <= nstep
                 H_c = (M_c + (A_c)*dt/(b0) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
             end
             if en_on == 2
-                H_uv = (Ma_uv + (A_uv)*dt/(b0*Re)); % + dt/b0*(Mp_uv + Sp_uv));
-                H_c = (M_c + (A_c)*dt/(b0*Re)); % + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
+                H_uv = (Ma_uv + (A_uv)*dt/(b0*Re));
+                H_c = (M_c + (A_c)*dt/(b0*Re)); 
             end
-%             H_q = full(H_uv);
             rhs_c = (H_c);
             [LH_uv,UH_uv]=lu(H_uv);
         end
@@ -832,12 +759,11 @@ while step <= nstep
 %% Output
     if mod(step,plot_int)==0 && plot_soln
         [plot1,u_mean] = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,step,time,u,psi_xy,N_en_y,plot1);
-%         avg_u = sum(u.*w2d_e,'All')/dom_vol
     end
     if mod(step,save_soln_int)==0 && save_soln
         disp(step)
         fname = strcat(soln_dir,"/soln_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ey),"_step_",num2str(step),".mat");
-        save(fname); %,"u","v","pr","psi","gpsi","hpsi","N","Ex","Ey","en_on","time","psi_xy","N_en_y","w","X","Y","Ys","Re","pert","k","omg","mu_t","k_bc","omg_bc","rho","u_0","v_0","pr_0");
+        save(fname); 
     end
     if isnan(u(1,2))
         step
@@ -854,7 +780,4 @@ end
 if  save_soln
     fname = strcat(soln_dir,"/soln_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ey),"_step_",num2str(step),".mat");
     save(fname);
-    %         ,"u","v","pr","psi","gpsi","hpsi","N","Ex","Ey","en_on","time","psi_xy","N_en_y","w","X","Y","Ys","Re","pert",...
-    %             "k","omg","mu_t","k_bc","omg_bc","rho","fk1","fk2","fk3","fomg1","fomg2","fomg3","fx1","fx2","fx3","fy1","fy2","fy3",...
-    %             "fx1_0","fx2_0","fx3_0","fy1_0","fy2_0","fy3_0","pr_0","u_0","v_0","u1","u2","u3","v1","v2","v3","k1","k2","k3","omg1","omg2","omg3");
 end
