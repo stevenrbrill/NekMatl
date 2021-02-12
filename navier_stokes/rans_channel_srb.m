@@ -34,7 +34,8 @@ CFL=100;
 rans_on = 1;
 exp_mesh = 0;
 
-soln_dir = "en_re100000_Ey8_2";
+dir_name = [head,'re',num2str(ceil(Re)),'_p',num2str(N),'_e',num2str(Ey)];
+soln_dir = dir_name;
 plot_soln = 1;
 save_soln = 1;
 plot_int = 10000;
