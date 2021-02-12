@@ -21,6 +21,7 @@ pointstyles = {'ko','bo','ro','go','co','mo','k^','b^','r^','g^','c^','m^','ks',
 % Moser info: u_tau = 5.43496e-02, Re_tau = 543
 % y/delta y^+, U^+, dUdy, W, P
 
+tic()
 format compact;
 format short;
 mu = 1/10000; %1/395; 1/6874;
@@ -818,3 +819,4 @@ if  save_soln
     fname = strcat(soln_dir,"/soln_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ey),"_step_",num2str(step),".mat");
     save(fname);
 end
+toc()
