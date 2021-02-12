@@ -28,8 +28,9 @@ omg_bc_val = 0;
 N=4; % polynomial order  
 Ex=1; % Number of elements in x
 Ey=8; % Number of elements in y
-Tfinal=300; 
-CFL=100;
+Tfinal=500; 
+CFL=500;
+head = '';
 
 rans_on = 1;
 exp_mesh = 0;
