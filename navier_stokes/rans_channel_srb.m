@@ -98,10 +98,6 @@ ylabel('y')
 set(gca, 'YGrid', 'on', 'XGrid', 'off')
 yticks(linspace(-1,1,Ey+1));
 
-psi_p = psi{1}(0,N_en_y*2/Ey-1);
-dypsi_p1 = gpsi{2}(0,N_en_y*2/Ey-1);
-dypsi_p2 = gpsi{2}(0,1-N_en_y*2/Ey);
-
 %% Begin Solve
 E=Ex*Ey; % Total number of elements
 N1=N+1;
@@ -119,6 +115,10 @@ Ys = zeros(Ey*length(Y(1,:,1)),1);
 for i = 1:Ey
     Ys((i-1)*(N+1)+1:(i)*(N+1)) = Y(1,:,(i-1)*Ex+1);
 end
+
+psi_p = psi{1}(0,Ys(N_en_y*(N+1)));
+dypsi_p1 = gpsi{2}(0,Ys(N_en_y*(N+1)));
+dypsi_p2 = gpsi{2}(0,Ys(end-N_en_y*(N+1)));
         
 [G,J,ML,RX]=make_coef(X,Y);
 [Ah,Bh,Ch,Dh,z,w]=semhat(N);
