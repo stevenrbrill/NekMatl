@@ -777,7 +777,7 @@ while step <= nstep
 end
 if  plot_soln
     [plot1,u_mean] = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,step,time,u,psi_xy,N_en_y,plot1);
-    get_Up(Ys,u_mean,u_tau,mu,lotw,Ey,N,psi);
+    get_Up(Ys,u_mean,u_tau,mu,lotw,Ey,N,psi,en_on);
 end
 if  save_soln
     fname = strcat(soln_dir,"/soln_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ey),"_step_",num2str(step),".mat");
