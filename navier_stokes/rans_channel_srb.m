@@ -49,8 +49,13 @@ pert = 0.0;
 f_ic = @(x,y) 3/2*(1-y.^2);
 
 %% Enrichment information
-en_on = 1;
+en_on = 0;
 N_en_y = 1; 
+delay_en = 1;
+en_start_time = 100;
+
+
+
 en_mag = 3;
 psi = {@(x,y) en_mag*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
 gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1.*y + 0.*x), ...
@@ -210,6 +215,7 @@ G_uv = sparse(G_uv);
 
 
 %% Assemble enrichment matrices
+psi_xy = zeros(N+1,N+1,E);
 if en_on
     [psi_xy,psi_xy_act,gpsi_xy_act,Sp_all,Sp_all_Q,Jac_e_flat,gpsi_e_flat,Mp_uv,Sp_uv,Mp_all_c,Sp_all_c] = ...
         assemble_enrichment(X,Y,Ex,Ey,E,N,N1,nn,nL,J,Q,R,N_en_y,psi,gpsi,hpsi,en_b_nodes,psi_p);
@@ -243,14 +249,11 @@ for e = 1:E
         for j = 1:N+1
             u(i,j,e) = f_ic(X(i,j,e),Y(i,j,e))+pert*rand()*u_ic;
             v(i,j,e) = v(i,j,e)+pert*rand()*u_ic;
-            if en_on
-                if ((e <= Ex*N_en_y) || (e > (Ey-N_en_y)*Ex))
-                    u(i,j,e) = u(i,j,e) - psi{1}(X(i,j,e),Y(i,j,e));
-                    v(i,j,e) = v(i,j,e) - psi{2}(X(i,j,e),Y(i,j,e));
-                end
-            end
         end
     end
+end
+if en_on
+    [u, v] = project_to_enrich(X,Y,E,Ex,Ey,N,N_en_y,u,v,psi);
 end
 
 darcy = 0.316./(Re.^0.25);
@@ -313,6 +316,15 @@ end
 
 %%
 while step <= nstep
+    time=step*dt;
+    
+    if (time > en_start_time) && (~en_on) && (delay_en)
+        en_on = 1;
+        [psi_xy,psi_xy_act,gpsi_xy_act,Sp_all,Sp_all_Q,Jac_e_flat,gpsi_e_flat,Mp_uv,Sp_uv,Mp_all_c,Sp_all_c] = ...
+            assemble_enrichment(X,Y,Ex,Ey,E,N,N1,nn,nL,J,Q,R,N_en_y,psi,gpsi,hpsi,en_b_nodes,psi_p);
+        [u, v] = project_to_enrich(X,Y,E,Ex,Ey,N,N_en_y,u,v,psi);
+    end
+    
     % Form combined u for RANS terms
     u_comb = u;
     if en_on
@@ -365,7 +377,7 @@ while step <= nstep
     Re_k = rho./gam_k;
     Re_omg = rho./gam_omg;
     %% Timestepping
-    time=step*dt;
+    
     if step==1; b0=1.0;    b= [ -1 0 0 ]';       a=[ 1  0 0 ]'; end
     if step==2; b0=1.5;    b=([ -4 1 0 ]')./2;   a=[ 2 -1 0 ]'; end
     if step>=3; b0=11./6.; b=([ -18 9 -2 ]')./6; a=[ 3 -3 1 ]'; end
