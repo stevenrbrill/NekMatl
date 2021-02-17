@@ -404,8 +404,8 @@ while step <= nstep
             H_uv = (Ma_uv + (A_uv)*dt/(b0) + dt/b0*(Mp_uv + Sp_uv));
             H_c = (M_c + (A_c)*dt/(b0) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
             if en_on == 2
-                H_uv = (Ma_uv + (A_uv)*dt/(b0*Re)); % + dt/b0*(Mp_uv + Sp_uv));
-                H_c = (M_c + (A_c)*dt/(b0*Re)); % + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
+                H_uv = (Ma_uv + (A_uv)*dt/(b0)); % + dt/b0*(Mp_uv + Sp_uv));
+                H_c = (M_c + (A_c)*dt/(b0)); % + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
             end
             %             H_q = full(H_uv);
             rhs_c = (H_c);
@@ -588,8 +588,8 @@ while step <= nstep
                 H_c = (M_c + (A_c)*dt/(b0) + dt/b0*(Mp_all_c{1}+Sp_all_c{1}));
             end
             if en_on == 2
-                H_uv = (Ma_uv + (A_uv)*dt/(b0*Re));
-                H_c = (M_c + (A_c)*dt/(b0*Re)); 
+                H_uv = (Ma_uv + (A_uv)*dt/(b0));
+                H_c = (M_c + (A_c)*dt/(b0)); 
             end
             rhs_c = (H_c);
             [LH_uv,UH_uv]=lu(H_uv);
