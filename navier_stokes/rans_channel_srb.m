@@ -217,7 +217,7 @@ G_uv = sparse(G_uv);
 %% Assemble enrichment matrices
 psi_xy = zeros(N+1,N+1,E);
 if en_on
-    [psi_xy,psi_xy_act,gpsi_xy_act,Sp_all,Sp_all_Q,Jac_e_flat,gpsi_e_flat,Mp_uv,Sp_uv,Mp_all_c,Sp_all_c] = ...
+    [psi_xy,psi_xy_act,gpsi_xy_act,Sp_all,Sp_all_Q,Jac_e_flat,gpsi_e_flat,Mp_uv,Sp_uv,Mp_all_c,Sp_all_c,Mp_full,Sp_full] = ...
         assemble_enrichment(X,Y,Ex,Ey,E,N,N1,nn,nL,J,Q,R,N_en_y,psi,gpsi,hpsi,en_b_nodes,psi_p);
 end
 
@@ -320,7 +320,7 @@ while step <= nstep
     
     if (time > en_start_time) && (~en_on) && (delay_en)
         en_on = 1;
-        [psi_xy,psi_xy_act,gpsi_xy_act,Sp_all,Sp_all_Q,Jac_e_flat,gpsi_e_flat,Mp_uv,Sp_uv,Mp_all_c,Sp_all_c] = ...
+        [psi_xy,psi_xy_act,gpsi_xy_act,Sp_all,Sp_all_Q,Jac_e_flat,gpsi_e_flat,Mp_uv,Sp_uv,Mp_all_c,Sp_all_c,Mp_full,Sp_full] = ...
             assemble_enrichment(X,Y,Ex,Ey,E,N,N1,nn,nL,J,Q,R,N_en_y,psi,gpsi,hpsi,en_b_nodes,psi_p);
         [u, v] = project_to_enrich(X,Y,E,Ex,Ey,N,N_en_y,u,v,psi);
     end
@@ -367,7 +367,7 @@ while step <= nstep
     
 
     %% Get rans values
-    [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg,R1,R2,R3,omg_w] ...
+    [mu_t,gam_k,gam_omg,G_k,G_omg,Y_k,Y_omg,S_k,S_omg,R1,R2,R3,R4,omg_w] ...
         = get_rans_coeffs(rho,mu,k,omg,SS,OS,dkdx,dkdy,domgdx,domgdy,Y,u_comb,v);
     if ~rans_on
         mu_t = zeros(size(mu_t));
@@ -469,7 +469,7 @@ while step <= nstep
     fx1 = -convl(u,RX,Dh,u,v); % + F; % du = Cu  
     fy1 = -convl(v,RX,Dh,u,v); % dv = Cv
     fk1 = -convl(k,RX,Dh,u,v) + G_k - Y_k + S_k; % dk = Ck
-    fomg1 = -convl(omg,RX,Dh,u,v) + G_omg - Y_omg + S_omg + R1 + R2 + R3; % domg = Comg
+    fomg1 = -convl(omg,RX,Dh,u,v) + G_omg - Y_omg + S_omg + R1 + R2 + R3 + R4; % domg = Comg
     fx1_0 = F;
     fy1_0 = zeros(size(F));
     
