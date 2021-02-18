@@ -147,6 +147,7 @@ for j=1:nL
     x(j)=1; 
     Ab(:,j)=abar_c(x,Dh,G,Q);  % assembled Neumann Operator
 end
+Ab_save = Ab;
 A_c=R*Q'*apply_en_cont(Ab,en_b_nodes,psi_p);
 S_check=full(Ab);
 Ab = Q'*Ab*Q;
@@ -366,6 +367,49 @@ while step <= nstep
         dvdx = dvdx + gpsi_xy_act{3}; % Doesn't matter given assumptions
         dvdy = dvdy + gpsi_xy_act{4}; % Doesn't matter given assumptions
     end
+    
+    % Modify enrichment
+%     if (mod(step,2000)==0) && (time > 50)
+%         u_tau_calc = sqrt(mu*dudy(:,1,1)/rho);
+%         u_tau = u_tau_calc(1);
+%         psi = {@(x,y) u_tau*((yp(y) <= ypb).*yp(y) + (yp(y) > ypb).*(1./kap.*log(yp(y)+eps)+beta) + 0.*x), @(x,y) 0.*y + 0.*x};
+%         gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) -1*sign(y).*u_tau.*(((yp(y) <= ypb).*1 + (yp(y) > ypb).*1./(kap*(yp(y)+eps)))*dypdy + 0.*x),...
+%             @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+%         hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) u_tau*(((yp(y) <= ypb).*0 + (yp(y) > ypb).*-1./(kap*(yp(y)+eps).^2))*dypdy*dypdy + 0.*x),...
+%             @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+%         
+%         psi_p = psi{1}(0,Ys(N_en_y*(N+1)));
+%         dypsi_p1 = gpsi{2}(0,Ys(N_en_y*(N+1)));
+%         dypsi_p2 = gpsi{2}(0,Ys(end-N_en_y*(N+1)));
+%         
+%         A_c=R*Q'*apply_en_cont(Ab_save,en_b_nodes,psi_p);
+%         M_c = R*Q'*apply_en_cont(Bb,en_b_nodes,psi_p);
+%         
+%         [psi_xy,psi_xy_act,gpsi_xy_act,Sp_all,Sp_all_Q,Jac_e_flat,gpsi_e_flat,Mp_uv,Sp_uv,Mp_all_c,Sp_all_c,Mp_full,Sp_full] = ...
+%             assemble_enrichment(X,Y,Ex,Ey,E,N,N1,nn,nL,J,Q,R,N_en_y,psi,gpsi,hpsi,en_b_nodes,psi_p);
+%         [u, v] = project_to_enrich(X,Y,E,Ex,Ey,N,N_en_y,u_comb,v,psi);
+%         
+%         en_on = 2;
+%         
+%         for ie = 1:E
+%             dudx(:,:,ie) = reshape(dphi_dx_flat(:,:,ie)*u_flat(:,ie),N1,N1);
+%             dvdx(:,:,ie) = reshape(dphi_dx_flat(:,:,ie)*v_flat(:,ie),N1,N1);
+%             dudy(:,:,ie) = reshape(dphi_dy_flat(:,:,ie)*u_flat(:,ie),N1,N1);
+%             dvdy(:,:,ie) = reshape(dphi_dy_flat(:,:,ie)*v_flat(:,ie),N1,N1);
+%             dkdx(:,:,ie) = reshape(dphi_dx_flat(:,:,ie)*k_flat(:,ie),N1,N1);
+%             dkdy(:,:,ie) = reshape(dphi_dy_flat(:,:,ie)*k_flat(:,ie),N1,N1);
+%             domgdx(:,:,ie) = reshape(dphi_dx_flat(:,:,ie)*omg_flat(:,ie),N1,N1);
+%             domgdy(:,:,ie) = reshape(dphi_dy_flat(:,:,ie)*omg_flat(:,ie),N1,N1);
+%         end
+%         
+%         if en_on
+%             dudx = dudx + gpsi_xy_act{1};
+%             dudy = dudy + gpsi_xy_act{2};
+%             dvdx = dvdx + gpsi_xy_act{3}; % Doesn't matter given assumptions
+%             dvdy = dvdy + gpsi_xy_act{4}; % Doesn't matter given assumptions
+%         end
+%     end
+    
     
     SS(:,:,:,1,1) = 1/2*(dudx+dudx);
     SS(:,:,:,1,2) = 1/2*(dudy+dvdx);
