@@ -25,7 +25,7 @@ function [Yp,Up] = get_Up(Y,U,u_tau,mu,lotw,Ey,N,psi,en_on)
     hold on
     semilogx(Yp_sample,Up_sample,'r--')
     semilogx(Yp,Up,'bo')
-    legend('Law of the Wall','Subsampled Solution','Nodal Values')
+    legend('Law of the Wall','Enriched Solution','Nodal Values')
     
 
 end

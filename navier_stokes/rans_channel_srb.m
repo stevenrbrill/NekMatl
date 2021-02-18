@@ -81,12 +81,23 @@ beta = 5.2;
 dypdy = u_tau/nu;
 ypb = 11.062299784340414;
 yp = @(y) (1-abs(y))*Re_t;
-lotw = @(yp) (yp <= ypb).*yp + (yp > ypb).*(1./kap.*log(yp+eps)+beta);
+u_tau = u_tau;
+lotw = @(yp) ((yp <= ypb).*yp + (yp > ypb).*(1./kap.*log(yp+eps)+beta));
 psi = {@(x,y) u_tau*((yp(y) <= ypb).*yp(y) + (yp(y) > ypb).*(1./kap.*log(yp(y)+eps)+beta) + 0.*x), @(x,y) 0.*y + 0.*x};
 gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) -1*sign(y).*u_tau.*(((yp(y) <= ypb).*1 + (yp(y) > ypb).*1./(kap*(yp(y)+eps)))*dypdy + 0.*x),...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) u_tau*(((yp(y) <= ypb).*0 + (yp(y) > ypb).*-1./(kap*(yp(y)+eps).^2))*dypdy*dypdy + 0.*x),...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+    
+
+% 1/7th
+% mag = 1;
+% yd = @(y) 1-abs(y)+eps;
+% psi = {@(x,y) mag*((yd(y)).^(1/7).*(yd(y)>eps*10)+ 0.*x), @(x,y) 0.*y + 0.*x};
+% gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) mag*(-1*sign(y).*1./7.*(yd(y)).^(-6/7).*(yd(y)>eps*10) + 0.*x),...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) mag*(-6/49*(yd(y)).^(-13/7).*(yd(y)>eps*10) + 0.*x),...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
     
 
 %% Plot psi
@@ -309,7 +320,7 @@ end
 
 plot1 = 1;
 time = 0;
-plot1 = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,step,time,u,psi_xy,N_en_y,plot1);
+[plot1,u_mean] = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,step,time,u,psi_xy,N_en_y,plot1);
 if save_soln
     mkdir(soln_dir);
 end
