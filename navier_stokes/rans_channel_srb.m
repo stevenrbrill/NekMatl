@@ -18,14 +18,14 @@ pointstyles = {'ko','bo','ro','go','co','mo','k^','b^','r^','g^','c^','m^','ks',
 
 format compact;
 format short; 
-mu = 1/40000; %1/395; 1/6874;
+mu = 1/100000; %1/395; 1/6874;
 rho = 1;
 Re = rho/mu; 
 dpdx = 1;
 k_bc_val = 0;
 omg_bc_val = 0;
 
-N=4; % polynomial order  
+N=6; % polynomial order  
 Ex=1; % Number of elements in x
 Ey=8; % Number of elements in y
 Tfinal=300; 
@@ -33,13 +33,13 @@ CFL=500;
 head = '';
 
 rans_on = 1;
-exp_mesh = 0;
+exp_mesh = 1;
 
 dir_name = [head,'re',num2str(ceil(Re)),'_p',num2str(N),'_e',num2str(Ey)];
 soln_dir = dir_name;
 plot_soln = 1;
-save_soln = 1;
-plot_int = 2500;
+save_soln = 0;
+plot_int = 5000;
 save_soln_int = 5000;
 restart = 0;
 rst_step = 300000;
@@ -49,7 +49,7 @@ pert = 0.0;
 f_ic = @(x,y) 3/2*(1-y.^2);
 
 %% Enrichment information
-en_on = 2;
+en_on = 0;
 N_en_y = 1; 
 delay_en = 0;
 en_start_time = 100;
