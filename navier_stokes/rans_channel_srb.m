@@ -29,7 +29,7 @@ N=6; % polynomial order
 Ex=1; % Number of elements in x
 Ey=8; % Number of elements in y
 Tfinal=300; 
-CFL=500;
+CFL=0.01;
 head = '';
 
 rans_on = 1;
@@ -43,10 +43,6 @@ plot_int = 5000;
 save_soln_int = 5000;
 restart = 0;
 rst_step = 300000;
-
-u_ic = Re;
-pert = 0.0;
-f_ic = @(x,y) 3/2*(1-y.^2);
 
 %% Enrichment information
 en_on = 0;
@@ -98,6 +94,23 @@ hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) u_tau*(((yp(y) <= ypb).*0 + (yp(y) > ypb).*-
 %         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 % hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) mag*(-6/49*(yd(y)).^(-13/7).*(yd(y)>eps*10) + 0.*x),...
 %         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+
+%% Initial Conditions
+u_cfl = 3/2;
+pert = 0.0;
+u_ic = @(x,y) 3/2*(1-y.^2);
+v_ic = @(x,y) 0.0*y;
+
+darcy = 0.316./(Re.^0.25);
+u_tau = sqrt(darcy/8);
+Yp = @(Y) max((1-abs(Y))*u_tau*Re,1e-3)+eps;
+sigma = 0.6;
+fact = @(Yp) exp((-(log10(Yp)-1).^2)./(2*sigma.^2));
+k_ic = @(x,y) 0.0*x + 4.5*u_tau*u_tau*fact(Yp(y));
+
+eps_s = 3;
+omg_ic = @(x,y) 0.0*x + 0.5*Re*u_tau*u_tau*fact(Yp(y));
+
     
 
 %% Plot psi
@@ -236,7 +249,7 @@ end
 %%
 
 dxmin=pi*(z(N1)-z(N))/(2*Ex); % Get min dx for CFL constraint
-dt=CFL*dxmin/u_ic; 
+dt=CFL*dxmin/u_cfl; 
 
 % dt = 1e-3;
 nstep=ceil(Tfinal/dt); 
@@ -251,33 +264,21 @@ Ai=pinv(full(Ab));
 
 disp("Setting Initial Conditions")
 % Initial conditions
-u=u_ic*ones(size(ML)); 
-v=0*ML;
-k=k_bc_val*ones(size(ML));
-omg=omg_bc_val*ones(size(ML));
-
 for e = 1:E
     for i = 1:N+1
         for j = 1:N+1
-            u(i,j,e) = f_ic(X(i,j,e),Y(i,j,e))+pert*rand()*u_ic;
-            v(i,j,e) = v(i,j,e)+pert*rand()*u_ic;
+%             u(i,j,e) = f_ic(X(i,j,e),Y(i,j,e))+pert*rand()*u_ic;
+%             v(i,j,e) = v(i,j,e)+pert*rand()*u_ic;
+            u(i,j,e) = u_ic(X(i,j,e),Y(i,j,e));
+            v(i,j,e) = v_ic(X(i,j,e),Y(i,j,e));
+            k(i,j,e) = k_ic(X(i,j,e),Y(i,j,e));
+            omg(i,j,e) = omg_ic(X(i,j,e),Y(i,j,e));
         end
     end
 end
 if en_on
     [u, v] = project_to_enrich(X,Y,E,Ex,Ey,N,N_en_y,u,v,psi);
 end
-
-darcy = 0.316./(Re.^0.25);
-u_tau = sqrt(darcy/8);
-Yp = max((1-abs(Y))*u_tau*Re,1e-3)+eps;
-sigma = 0.6;
-fact = exp((-(log10(Yp)-1).^2)./(2*sigma.^2));
-k = k_bc_val + 4.5*u_tau*u_tau*fact;
-
-eps_s = 3;
-omg_bc_val = 0; 
-omg = omg_bc_val + 0.5*Re*u_tau*u_tau*fact;
 
 % u = apply_en_cont_soln(u,en_b_nodes,psi_p);
 u1_0=u; u2_0=u; u3_0=u; fx3_0=u; fx2_0=u; fx1_0=u; u_0 = u;
