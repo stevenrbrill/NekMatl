@@ -40,7 +40,7 @@ head = 'les_';
 rans_on = 1;
 exp_mesh = 1;
 
-dir_name = [head,'re',num2str(ceil(Re)),'_p',num2str(N),'_e',num2str(Ey)];
+dir_name = [head,'re',num2str(ceil(Re)),'_p',num2str(N),'_e',num2str(Ey),'_exp',num2str(exp_mesh),'_en',num2str(en_on)];
 soln_dir = dir_name;
 plot_soln = 1;
 save_soln = 0;
