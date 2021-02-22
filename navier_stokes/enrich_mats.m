@@ -1,4 +1,5 @@
-function[Mp,Sp,T1,T2,T1_alt,T1_alt2,Mp_alt,Sp_alt,z,w] =  enrich_mats(Xe,Ye,E,N,fpsi,fgpsi,fhpsi,jac)
+function[Mp,Sp,T1,T2,T1_alt,T1_alt2,Mp_alt,Sp_alt,z,w] = ...
+    enrich_mats(Xe,Ye,E,N,fpsi,fgpsi,fhpsi,jac,N_quad)
 %
 %                                                 ^
 %     Compute the single element 1D SEM Stiffness Mass, and Convection
@@ -7,7 +8,6 @@ function[Mp,Sp,T1,T2,T1_alt,T1_alt2,Mp_alt,Sp_alt,z,w] =  enrich_mats(Xe,Ye,E,N,
 %
 
 [Ah,Bh,Ch,Dh,zb,wb] = semhat(N);
-N_quad = N;
 [z,w] = zwgll(N_quad);
 nq = length(z);
 basis = get_nodal_basis_coeffs(zb);

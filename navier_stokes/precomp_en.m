@@ -1,6 +1,6 @@
-function[L_x,L_y,Jac,gpsi,Jac_flat,gpsi_flat] =  precomp_en(Xe,Ye,E,N,fpsi,fgpsi,fhpsi)
+function[L_x,L_y,Jac,gpsi,Jac_flat,gpsi_flat] =  precomp_en(Xe,Ye,E,N,fpsi,fgpsi,fhpsi,N_over)
 
-N_quad = N;
+N_quad = N_over;
 [z,w] = zwgll(N_quad);
 
 L_x = zeros(E,1);
@@ -30,8 +30,9 @@ for e = 1:E
     Jac(:,:,e) = L_x(e)/2*L_y(e)/2*ones(size(w2d));
 end
 
-Jac_flat = reshape(Jac,[(N+1)*(N+1),E]);
-gpsi_flat{1} = reshape(gpsi{1},[(N+1)*(N+1),E]);
-gpsi_flat{2} = reshape(gpsi{2},[(N+1)*(N+1),E]);
-gpsi_flat{3} = reshape(gpsi{3},[(N+1)*(N+1),E]);
-gpsi_flat{4} = reshape(gpsi{4},[(N+1)*(N+1),E]);
+tot_N_quad = (N_quad+1)*(N_quad+1);
+Jac_flat = reshape(Jac,[tot_N_quad,E]);
+gpsi_flat{1} = reshape(gpsi{1},[tot_N_quad,E]);
+gpsi_flat{2} = reshape(gpsi{2},[tot_N_quad,E]);
+gpsi_flat{3} = reshape(gpsi{3},[tot_N_quad,E]);
+gpsi_flat{4} = reshape(gpsi{4},[tot_N_quad,E]);

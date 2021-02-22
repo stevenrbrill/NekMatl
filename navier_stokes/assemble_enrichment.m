@@ -1,4 +1,4 @@
-function [psi_xy,psi_xy_act,gpsi_xy_act,Sp_all,Sp_all_Q,Jac_e_flat,gpsi_e_flat,Mp_uv,Sp_uv,Mp_all_c,Sp_all_c,Mp_full,Sp_full] = assemble_enrichment(X,Y,Ex,Ey,E,N,N1,nn,nL,J,Q,R,N_en_y,psi,gpsi,hpsi,en_b_nodes,psi_p)
+function [psi_xy,psi_xy_act,gpsi_xy_act,Sp_all,Sp_all_Q,Jac_e_flat,gpsi_e_flat,Mp_uv,Sp_uv,Mp_all_c,Sp_all_c,Mp_full,Sp_full] = assemble_enrichment(X,Y,Ex,Ey,E,N,N1,nn,nL,J,Q,R,N_en_y,psi,gpsi,hpsi,en_b_nodes,psi_p,N_over)
 
 %% Assemble enrichment matrices
 psi_xy{1} = psi{1}(X,Y);
@@ -28,10 +28,10 @@ gpsi_xy_act{4} = zeros(size(X));
     end
 
     disp("Computing enrichment")
-    [Mp,Sp,T1,T2,T1_alt,T1_alt2,Mp_alt,Sp_alt,z_en,w_en] = enrich_mats(X,Y,E,N,psi,gpsi,hpsi,J);
+    [Mp,Sp,T1,T2,T1_alt,T1_alt2,Mp_alt,Sp_alt,z_en,w_en] = enrich_mats(X,Y,E,N,psi,gpsi,hpsi,J,N_over);
     nb = N1*N1;
     
-    [L_x_e,L_y_e,Jac_e,gpsi_e,Jac_e_flat,gpsi_e_flat] =  precomp_en(X,Y,E,N,psi,gpsi,hpsi);  
+    [L_x_e,L_y_e,Jac_e,gpsi_e,Jac_e_flat,gpsi_e_flat] =  precomp_en(X,Y,E,N,psi,gpsi,hpsi,N_over);  
         
     for is=1:2
         Mp_all{is} = zeros(nb*E,nb*E);

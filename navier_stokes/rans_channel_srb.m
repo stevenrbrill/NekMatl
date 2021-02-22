@@ -30,7 +30,12 @@ Ex=1; % Number of elements in x
 Ey=8; % Number of elements in y
 Tfinal=300; 
 CFL=0.01;
-head = '';
+en_on = 1;
+N_en_y = 1; 
+N_over = 8*N;
+delay_en = 0;
+en_start_time = 100;
+head = 'les_';
 
 rans_on = 1;
 exp_mesh = 1;
@@ -45,13 +50,6 @@ restart = 0;
 rst_step = 300000;
 
 %% Enrichment information
-en_on = 0;
-N_en_y = 1; 
-delay_en = 0;
-en_start_time = 100;
-
-
-
 en_mag = 3;
 psi = {@(x,y) en_mag*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
 gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1.*y + 0.*x), ...
@@ -70,6 +68,7 @@ hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
 % Law of the wall
 u_tau = sqrt(0.316./(Re.^0.25)/8);
 Re_t = u_tau/mu; %Re;
+Re_t = 550;
 % u_tau = 1;
 nu = 1/Re_t;
 kap = 0.41;
@@ -96,6 +95,7 @@ hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) u_tau*(((yp(y) <= ypb).*0 + (yp(y) > ypb).*-
 %         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 
 %% Initial Conditions
+% Turbulent pipe
 u_cfl = 3/2;
 pert = 0.0;
 u_ic = @(x,y) 3/2*(1-y.^2);
@@ -104,6 +104,24 @@ v_ic = @(x,y) 0.0*y;
 darcy = 0.316./(Re.^0.25);
 u_tau = sqrt(darcy/8);
 Yp = @(Y) max((1-abs(Y))*u_tau*Re,1e-3)+eps;
+sigma = 0.6;
+fact = @(Yp) exp((-(log10(Yp)-1).^2)./(2*sigma.^2));
+k_ic = @(x,y) 0.0*x + 4.5*u_tau*u_tau*fact(Yp(y));
+
+eps_s = 3;
+omg_ic = @(x,y) 0.0*x + 0.5*Re*u_tau*u_tau*fact(Yp(y));
+
+
+% Turbulent channel
+Re_tau = 550;
+u_tau = Re_tau*mu/rho;
+Yp = @(Y) max((1-abs(Y))*Re_tau,1e-3)+eps;
+C=5.17;
+kap=0.41;
+riech = @(Yp) mu*Re_tau*(1/kap.*log(1+kap.*Yp)+(C-1./kap.*log(kap)).*(1-exp(-Yp/11)-Yp/11.*exp(-Yp/3)));
+u_ic = @(x,y) riech(Yp(y));
+v_ic = @(x,y) 0*y;
+
 sigma = 0.6;
 fact = @(Yp) exp((-(log10(Yp)-1).^2)./(2*sigma.^2));
 k_ic = @(x,y) 0.0*x + 4.5*u_tau*u_tau*fact(Yp(y));
@@ -241,9 +259,18 @@ G_uv = sparse(G_uv);
 
 %% Assemble enrichment matrices
 psi_xy = zeros(N+1,N+1,E);
+N1_over = N_over + 1;
+[z_over,w_over] = zwgll(N_over);
+w2d_over = w_over*w_over';
+w1d_over = reshape(w2d_over,[N1_over*N1_over,1])';
+[dphi_dxi_over, dphi_deta_over, dphi_dx_over, dphi_dy_over, dpdx_dpdx_over, dpdy_dpdy_over, dpdx_dpdy_over, ...
+        dpdx_dpdx_flat_over, dpdy_dpdy_flat_over, dpdx_dpdy_flat_over,phi_2d_flat] ...
+    = get_phi_grads2(N1,E,J_x,J_y,N_over);
+dphi_dx_flat_over = reshape(dphi_dx_over,N1_over*N1_over,N1*N1,E);
+dphi_dy_flat_over = reshape(dphi_dy_over,N1_over*N1_over,N1*N1,E);
 if en_on
     [psi_xy,psi_xy_act,gpsi_xy_act,Sp_all,Sp_all_Q,Jac_e_flat,gpsi_e_flat,Mp_uv,Sp_uv,Mp_all_c,Sp_all_c,Mp_full,Sp_full] = ...
-        assemble_enrichment(X,Y,Ex,Ey,E,N,N1,nn,nL,J,Q,R,N_en_y,psi,gpsi,hpsi,en_b_nodes,psi_p);
+        assemble_enrichment(X,Y,Ex,Ey,E,N,N1,nn,nL,J,Q,R,N_en_y,psi,gpsi,hpsi,en_b_nodes,psi_p,N_over);
 end
 
 %%
@@ -334,7 +361,7 @@ while step <= nstep
     if (time > en_start_time) && (~en_on) && (delay_en)
         en_on = 1;
         [psi_xy,psi_xy_act,gpsi_xy_act,Sp_all,Sp_all_Q,Jac_e_flat,gpsi_e_flat,Mp_uv,Sp_uv,Mp_all_c,Sp_all_c,Mp_full,Sp_full] = ...
-            assemble_enrichment(X,Y,Ex,Ey,E,N,N1,nn,nL,J,Q,R,N_en_y,psi,gpsi,hpsi,en_b_nodes,psi_p);
+            assemble_enrichment(X,Y,Ex,Ey,E,N,N1,nn,nL,J,Q,R,N_en_y,psi,gpsi,hpsi,en_b_nodes,psi_p,N_over);
         [u, v] = project_to_enrich(X,Y,E,Ex,Ey,N,N_en_y,u,v,psi);
     end
     
@@ -387,7 +414,7 @@ while step <= nstep
 %         M_c = R*Q'*apply_en_cont(Bb,en_b_nodes,psi_p);
 %         
 %         [psi_xy,psi_xy_act,gpsi_xy_act,Sp_all,Sp_all_Q,Jac_e_flat,gpsi_e_flat,Mp_uv,Sp_uv,Mp_all_c,Sp_all_c,Mp_full,Sp_full] = ...
-%             assemble_enrichment(X,Y,Ex,Ey,E,N,N1,nn,nL,J,Q,R,N_en_y,psi,gpsi,hpsi,en_b_nodes,psi_p);
+%             assemble_enrichment(X,Y,Ex,Ey,E,N,N1,nn,nL,J,Q,R,N_en_y,psi,gpsi,hpsi,en_b_nodes,psi_p,N_over);
 %         [u, v] = project_to_enrich(X,Y,E,Ex,Ey,N,N_en_y,u_comb,v,psi);
 %         
 %         en_on = 2;
@@ -454,7 +481,7 @@ while step <= nstep
         if en_on
             A_full = 2*A_x_full+A_y_full+A_xy_full;
             A_c=R*Q'*apply_en_cont(A_full,en_b_nodes,psi_p);
-            [T1_new] = form_T1_psi(E,N,w1d,Jac_e_flat,dphi_dy_flat,gpsi_e_flat,Re_comb,N_en_y);
+            [T1_new] = form_T1_psi(E,N,w1d_over,Jac_e_flat,dphi_dy_flat_over,gpsi_e_flat,Re_comb,N_en_y,phi_2d_flat);
             T1_rhs = (dt/b0)*R*Q'*reshape(T1_new,nL,1);
             
             H_uv = (Ma_uv + (A_uv)*dt/(b0) + dt/b0*(Mp_uv + Sp_uv));
@@ -636,7 +663,7 @@ while step <= nstep
         if en_on           
             A_full = 2*A_x_full+A_y_full+A_xy_full;
             A_c=R*Q'*apply_en_cont(A_full,en_b_nodes,psi_p);
-            [T1_new] = form_T1_psi(E,N,w1d,Jac_e_flat,dphi_dy_flat,gpsi_e_flat,Re_comb,N_en_y);
+            [T1_new] = form_T1_psi(E,N,w1d_over,Jac_e_flat,dphi_dy_flat_over,gpsi_e_flat,Re_comb,N_en_y,phi_2d_flat);
             T1_rhs = (dt/b0)*R*Q'*reshape(T1_new,nL,1);
             
             if en_on == 1
