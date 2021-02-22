@@ -18,7 +18,7 @@ pointstyles = {'ko','bo','ro','go','co','mo','k^','b^','r^','g^','c^','m^','ks',
 
 format compact;
 format short; 
-mu = 1/100000; %1/395; 1/6874;
+mu = 1/10000; %1/395; 1/6874;
 rho = 1;
 Re = rho/mu; 
 dpdx = 1;
@@ -27,15 +27,15 @@ omg_bc_val = 0;
 
 N=6; % polynomial order  
 Ex=1; % Number of elements in x
-Ey=8; % Number of elements in y
-Tfinal=300; 
-CFL=0.01;
-en_on = 1;
+Ey=10; % Number of elements in y
+Tfinal=500; 
+CFL=0.05;
+en_on = 0;
 N_en_y = 1; 
 N_over = 8*N;
 delay_en = 0;
 en_start_time = 100;
-head = 'les_';
+head = '';
 
 rans_on = 1;
 exp_mesh = 1;
@@ -43,7 +43,7 @@ exp_mesh = 1;
 dir_name = [head,'re',num2str(ceil(Re)),'_p',num2str(N),'_e',num2str(Ey),'_exp',num2str(exp_mesh),'_en',num2str(en_on)];
 soln_dir = dir_name;
 plot_soln = 1;
-save_soln = 0;
+save_soln = 1;
 plot_int = 5000;
 save_soln_int = 5000;
 restart = 0;
@@ -76,7 +76,7 @@ beta = 5.2;
 dypdy = u_tau/nu;
 ypb = 11.062299784340414;
 yp = @(y) (1-abs(y))*Re_t;
-u_tau = u_tau;
+u_tau = Re_t*mu;
 lotw = @(yp) ((yp <= ypb).*yp + (yp > ypb).*(1./kap.*log(yp+eps)+beta));
 psi = {@(x,y) u_tau*((yp(y) <= ypb).*yp(y) + (yp(y) > ypb).*(1./kap.*log(yp(y)+eps)+beta) + 0.*x), @(x,y) 0.*y + 0.*x};
 gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) -1*sign(y).*u_tau.*(((yp(y) <= ypb).*1 + (yp(y) > ypb).*1./(kap*(yp(y)+eps)))*dypdy + 0.*x),...
@@ -118,9 +118,13 @@ u_tau = Re_tau*mu/rho;
 Yp = @(Y) max((1-abs(Y))*Re_tau,1e-3)+eps;
 C=5.17;
 kap=0.41;
+eps_ic = 0; %1e-2;
+kx = 23;
+kz=13;
+alpha_ic = kx*2*pi/(0.375);
 riech = @(Yp) mu*Re_tau*(1/kap.*log(1+kap.*Yp)+(C-1./kap.*log(kap)).*(1-exp(-Yp/11)-Yp/11.*exp(-Yp/3)));
-u_ic = @(x,y) riech(Yp(y));
-v_ic = @(x,y) 0*y;
+u_ic = @(x,y) riech(Yp(y)) + eps_ic*beta*sin(alpha_ic*x);
+v_ic = @(x,y) 0*y + eps_ic*sin(alpha_ic*x);
 
 sigma = 0.6;
 fact = @(Yp) exp((-(log10(Yp)-1).^2)./(2*sigma.^2));
