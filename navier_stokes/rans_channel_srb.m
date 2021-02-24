@@ -73,16 +73,16 @@ hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
     
 % Law of the wall
 u_tau = sqrt(0.316./(Re.^0.25)/8);
-Re_t = u_tau/mu; %Re;
-Re_t = 550;
+Re_tau = u_tau/mu; %Re;
+Re_tau = 550;
 % u_tau = 1;
-nu = 1/Re_t;
+nu = 1/Re_tau;
 kap = 0.41;
 beta = 5.2;
 dypdy = u_tau/nu;
 ypb = 11.062299784340414;
-yp = @(y) (1-abs(y))*Re_t;
-u_tau = Re_t*mu;
+yp = @(y) (1-abs(y))*Re_tau;
+u_tau = Re_tau*mu;
 lotw = @(yp) ((yp <= ypb).*yp + (yp > ypb).*(1./kap.*log(yp+eps)+beta));
 psi = {@(x,y) u_tau*((yp(y) <= ypb).*yp(y) + (yp(y) > ypb).*(1./kap.*log(yp(y)+eps)+beta) + 0.*x), @(x,y) 0.*y + 0.*x};
 gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) -1*sign(y).*u_tau.*(((yp(y) <= ypb).*1 + (yp(y) > ypb).*1./(kap*(yp(y)+eps)))*dypdy + 0.*x),...
@@ -99,6 +99,23 @@ hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) u_tau*(((yp(y) <= ypb).*0 + (yp(y) > ypb).*-
 %         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 % hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) mag*(-6/49*(yd(y)).^(-13/7).*(yd(y)>eps*10) + 0.*x),...
 %         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+
+% Reicher Law of the Wall
+Re_tau = 550;
+u_tau = Re_tau*mu/rho;
+Yp = @(Y) max((1-abs(Y))*Re_tau,1e-3)+eps;
+C=5.17;
+kap=0.41;
+dypdy = Re_tau;
+yp = @(y) max((1-abs(y))*Re_tau,1e-3);
+u_tau = Re_tau*mu;
+psi = {@(x,y) mu*Re_tau*(1/kap.*log(1+kap.*yp(y))+(C-1./kap.*log(kap)).*(1-exp(-yp(y)/11)-yp(y)/11.*exp(-yp(y)/3))) + 0.*x,...
+    @(x,y) 0.*y + 0.*x};
+gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) -1*sign(y).*dypdy*mu*Re_tau.*(1./(1+kap.*yp(y))+(C-1./kap.*log(kap)).*(-1/11*exp(-yp(y)/11)-(yp(y)+3)/33.*exp(-yp(y)/3))) + 0.*x,...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) dypdy*dypdy*mu*Re_tau*(-kap./((1+kap.*yp(y)).^2)+(C-1./kap.*log(kap)).*(-1/121*exp(-yp(y)/11)-(yp(y)+6)/99.*exp(-yp(y)/3))) + 0.*x,...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+
 
 %% Initial Conditions
 % Turbulent pipe
@@ -132,6 +149,8 @@ riech = @(Yp) mu*Re_tau*(1/kap.*log(1+kap.*Yp)+(C-1./kap.*log(kap)).*(1-exp(-Yp/
 u_ic = @(x,y) riech(Yp(y)) + eps_ic*beta*sin(alpha_ic*x);
 v_ic = @(x,y) 0*y + eps_ic*sin(alpha_ic*x);
 
+% u_ic = @(x,y) psi{1}(x,y);
+
 sigma = 0.6;
 fact = @(Yp) exp((-(log10(Yp)-1).^2)./(2*sigma.^2));
 k_ic = @(x,y) 0.0*x + 4.5*u_tau*u_tau*fact(Yp(y));
@@ -139,8 +158,9 @@ k_ic = @(x,y) 0.0*x + 4.5*u_tau*u_tau*fact(Yp(y));
 eps_s = 3;
 omg_ic = @(x,y) 0.0*x + 0.5*Re*u_tau*u_tau*fact(Yp(y));
 
-    
-
+%%
+%%
+%%
 %% Plot psi
 figure(5)
 ys_plot = linspace(-1,1,1000);
