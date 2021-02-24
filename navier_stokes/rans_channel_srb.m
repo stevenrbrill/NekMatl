@@ -15,15 +15,17 @@ pointstyles = {'ko','bo','ro','go','co','mo','k^','b^','r^','g^','c^','m^','ks',
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Navier-Stokes Solver Demo (2D Channel)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% pgrads = 3.25e-3 for N=4, E=8, exp mesh
+% pgrads = 9.25e-3 for N=4, E=6, uniform
+
 
 format compact;
 format short; 
 mu = 1/10000; %1/395; 1/6874;
 rho = 1;
 Re = rho/mu; 
-dpdx = 1;
-k_bc_val = 0;
-omg_bc_val = 0;
+pgrad = 3.25e-3; 9.25e-3; %2.5e-4; % 9.25e-3;
+force_pgrad = 0;
 
 N=6; % polynomial order  
 Ex=1; % Number of elements in x
@@ -319,7 +321,8 @@ v1=v; v2=v; v3=v; fy3=v; fy2=v; fy1=v;
 k1=k; k2=k; k3=k; fk3=k; fk2=k; fk1=k;
 omg1=omg; omg2=omg; omg3=omg; fomg3=omg; fomg2=omg; fomg1=omg;
 
-F = dpdx*ones(size(ML));
+F_pgrad = pgrad*ones(size(ML));
+F_1 = ones(size(ML));
 % Fb=reshape(ML.*F,nL,1); %% Output
 % 
 % Fb=Bb\(Q'*Fb);  
@@ -334,13 +337,13 @@ uv_ic_check = uv;
 % u_bc = reshape(ML.*u_bc,nL,1);
 % u_bc = Bb\(Q'*u_bc);
 
-k_bc = k_bc_val.*ones(size(k));
-k_bc = reshape(ML.*k_bc,nL,1);
-k_bc = (Q'*Bb*Q)\(Q'*k_bc);
-
-omg_bc = omg_bc_val.*ones(size(omg));
-omg_bc = reshape(ML.*omg_bc,nL,1);
-omg_bc = (Q'*Bb*Q)\(Q'*omg_bc);
+% k_bc = k_bc_val.*ones(size(k));
+% k_bc = reshape(ML.*k_bc,nL,1);
+% k_bc = (Q'*Bb*Q)\(Q'*k_bc);
+% 
+% omg_bc = omg_bc_val.*ones(size(omg));
+% omg_bc = reshape(ML.*omg_bc,nL,1);
+% omg_bc = (Q'*Bb*Q)\(Q'*omg_bc);
 
 %%
 disp("Timestepping")
@@ -557,8 +560,12 @@ while step <= nstep
     fy1 = -convl(v,RX,Dh,u,v); % dv = Cv
     fk1 = -convl(k,RX,Dh,u,v) + G_k - Y_k + S_k; % dk = Ck
     fomg1 = -convl(omg,RX,Dh,u,v) + G_omg - Y_omg + S_omg + R1 + R2 + R3 + R4; % domg = Comg
-    fx1_0 = F;
-    fy1_0 = zeros(size(F));
+    fx1_0 = F_1;
+    fy1_0 = zeros(size(F_1));
+    
+    if force_pgrad
+        fx1 = fx1 + F_pgrad;
+    end
     
     if en_on == 2
         en_u = dt/b0*((Sp_full{1}+Mp_full{1})*reshape(u,nL,1)+Mp_full{2}*reshape(v,nL,1));
@@ -731,7 +738,7 @@ while step <= nstep
     avg_u = sum(u_comb.*w2d_e,'All')/dom_vol;
     avg_u_0 = sum(u_0_comb.*w2d_e,'All')/dom_vol;
     alpha_0 = (1-avg_u)/avg_u_0;
-    
+    if ~force_pgrad 
     % SRB 
     u = u + alpha_0*u_0;
 %     u_comb = u_comb + alpha_0*u_comb;
@@ -741,6 +748,7 @@ while step <= nstep
 %     end
     v = v + alpha_0*v_0;
     pr = pr + alpha_0*pr_0;
+    end
     
     
 %% Output
