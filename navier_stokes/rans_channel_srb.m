@@ -51,6 +51,10 @@ save_soln_int = 5000;
 restart = 0;
 rst_step = 300000;
 
+if ~en_on
+    N_over = N;
+end
+
 %% Enrichment information
 en_mag = 3;
 psi = {@(x,y) en_mag*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
