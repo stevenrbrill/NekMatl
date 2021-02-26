@@ -101,20 +101,20 @@ hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) u_tau*(((yp(y) <= ypb).*0 + (yp(y) > ypb).*-
 %         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 
 % Reicher Law of the Wall
-Re_tau = 550;
-u_tau = Re_tau*mu/rho;
-Yp = @(Y) max((1-abs(Y))*Re_tau,1e-3)+eps;
-C=5.17;
-kap=0.41;
-dypdy = Re_tau;
-yp = @(y) max((1-abs(y))*Re_tau,1e-3);
-u_tau = Re_tau*mu;
-psi = {@(x,y) mu*Re_tau*(1/kap.*log(1+kap.*yp(y))+(C-1./kap.*log(kap)).*(1-exp(-yp(y)/11)-yp(y)/11.*exp(-yp(y)/3))) + 0.*x,...
-    @(x,y) 0.*y + 0.*x};
-gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) -1*sign(y).*dypdy*mu*Re_tau.*(1./(1+kap.*yp(y))+(C-1./kap.*log(kap)).*(-1/11*exp(-yp(y)/11)-(yp(y)+3)/33.*exp(-yp(y)/3))) + 0.*x,...
-        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) dypdy*dypdy*mu*Re_tau*(-kap./((1+kap.*yp(y)).^2)+(C-1./kap.*log(kap)).*(-1/121*exp(-yp(y)/11)-(yp(y)+6)/99.*exp(-yp(y)/3))) + 0.*x,...
-        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% Re_tau = 550;
+% u_tau = Re_tau*mu/rho;
+% Yp = @(Y) max((1-abs(Y))*Re_tau,1e-3)+eps;
+% C=5.17;
+% kap=0.41;
+% dypdy = Re_tau;
+% yp = @(y) max((1-abs(y))*Re_tau,1e-3);
+% u_tau = Re_tau*mu;
+% psi = {@(x,y) mu*Re_tau*(1/kap.*log(1+kap.*yp(y))+(C-1./kap.*log(kap)).*(1-exp(-yp(y)/11)-yp(y)/11.*exp(-yp(y)/3))) + 0.*x,...
+%     @(x,y) 0.*y + 0.*x};
+% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) -1*sign(y).*dypdy*mu*Re_tau.*(1./(1+kap.*yp(y))+(C-1./kap.*log(kap)).*(-1/11*exp(-yp(y)/11)-(yp(y)+3)/33.*exp(-yp(y)/3))) + 0.*x,...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) dypdy*dypdy*mu*Re_tau*(-kap./((1+kap.*yp(y)).^2)+(C-1./kap.*log(kap)).*(-1/121*exp(-yp(y)/11)-(yp(y)+6)/99.*exp(-yp(y)/3))) + 0.*x,...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 
 
 %% Initial Conditions
@@ -145,8 +145,9 @@ eps_ic = 0; %1e-2;
 kx = 23;
 kz=13;
 alpha_ic = kx*2*pi/(0.375);
+beta_ic = kz*2*pi/1;
 riech = @(Yp) mu*Re_tau*(1/kap.*log(1+kap.*Yp)+(C-1./kap.*log(kap)).*(1-exp(-Yp/11)-Yp/11.*exp(-Yp/3)));
-u_ic = @(x,y) riech(Yp(y)) + eps_ic*beta*sin(alpha_ic*x);
+u_ic = @(x,y) riech(Yp(y)) + eps_ic*sin(alpha_ic*x);
 v_ic = @(x,y) 0*y + eps_ic*sin(alpha_ic*x);
 
 % u_ic = @(x,y) psi{1}(x,y);
