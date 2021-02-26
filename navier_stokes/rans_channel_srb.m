@@ -653,12 +653,6 @@ while step <= nstep
     
 
     %%
-    
-    %% HACK
-    uL_0(:,:,1) = zeros(size(uL_0(:,:,1)));
-    uL_0(:,1,2) = zeros(size(uL_0(:,2,2)));
-    uL_0(:,:,end) = zeros(size(uL_0(:,:,end)));
-    uL_0(:,end,end-1) = zeros(size(uL_0(:,end,end-1)));
 
     %   Set RHS.                 %Viscous update. %  Convert to local form.
 %     u=R*(Q'*reshape(ML.*uL,nL,1)-Hbar*u_bc);
@@ -719,14 +713,6 @@ while step <= nstep
             end
             rhs_c = (H_c);
             [LH_uv,UH_uv]=lu(H_uv);
-            
-            % HACK
-            H_uv_0 = H_uv;
-            H_uv_0(1:N*N,:) = 0;
-            H_uv_0(109:124,:) = 0;
-            H_uv_0(1:N*N,1:N*N) = eye(N*N);
-            H_uv_0(109:124,109:124) = eye(N*N);
-            [LH_uv_0,UH_uv_0]=lu(H_uv_0);
         end
     end
     
@@ -737,7 +723,7 @@ while step <= nstep
     %% Solve for u_0, v_0, p_0
     % SRB
     uv_0 = [u_rhs_0;v_rhs_0];
-    uv_0=UH_uv_0\(LH_uv_0\uv_0);
+    uv_0=UH_uv\(LH_uv\uv_0);
     
     u_0 = uv_0(1:nn);
     v_0 = uv_0(nn+1:2*nn);
@@ -790,13 +776,10 @@ while step <= nstep
     pr = pr + alpha_0*pr_0;
     end
     
-%     u(:,:,end)
     
 %% Output
     if mod(step,plot_int)==0 && plot_soln
         [plot1,u_mean] = post_channel(N,Ex,Ey,w,X,Y,Ys,en_on,step,time,u,psi_xy,N_en_y,plot1);
-        avg_u = sum(u_comb.*w2d_e,'All')/dom_vol
-        u(:,:,end)
     end
     if mod(step,save_soln_int)==0 && save_soln
         disp(step)
