@@ -1,6 +1,6 @@
 function [dphi_dxi, dphi_deta, dphi_dx, dphi_dy, dpdx_dpdx, dpdy_dpdy, dpdx_dpdy, ...
         dpdx_dpdx_flat, dpdy_dpdy_flat, dpdx_dpdy_flat,phi_2d_flat] ...
-    = get_phi_grads2(N1,E,J_x,J_y,N_quad)
+    = get_phi_grads2(N1,E,J_x,J_y,N_quad,N_en_y)
 
 nq = N_quad+1;
 N = N1-1;
@@ -43,6 +43,7 @@ end
 dphi_dx = zeros(N1_quad,N1_quad,N1*N1,E);
 dphi_dy = zeros(N1_quad,N1_quad,N1*N1,E);
 for ie=1:E
+    if (ie <= N_en_y) || (E-ie < N_en_y)
     ind=1;
     for i=1:N1
         for j=1:N1        
@@ -50,6 +51,7 @@ for ie=1:E
             dphi_dy(:,:,ind,ie) = dphi_deta(:,:,ind)*J_y(ie);
             ind = ind +1;
         end
+    end
     end
 end
 
@@ -60,6 +62,7 @@ dpdx_dpdx_flat = zeros(N1_quad*N1_quad,N1*N1,E);
 dpdy_dpdy_flat = zeros(N1_quad*N1_quad,N1*N1,E);
 dpdx_dpdy_flat = zeros(N1_quad*N1_quad,N1*N1,E);
 for ie=1:E
+    if (ie <= N_en_y) || E-ie < N_en_y
 for i=1:N1*N1
     for j=1:N1*N1
         dpdx_dpdx(:,:,i,j,ie) = dphi_dx(:,:,i,ie).*dphi_dx(:,:,j,ie);
@@ -70,5 +73,6 @@ for i=1:N1*N1
         dpdy_dpdy_flat(:,(i-1)*N1*N1+j,ie) = reshape(dpdy_dpdy(:,:,i,j,ie),[N1_quad*N1_quad,1]);
         dpdx_dpdy_flat(:,(i-1)*N1*N1+j,ie) = reshape(dpdx_dpdy(:,:,i,j,ie),[N1_quad*N1_quad,1]);
     end
-end   
+end
+    end
 end

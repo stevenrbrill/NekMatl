@@ -306,9 +306,10 @@ N1_over = N_over + 1;
 [z_over,w_over] = zwgll(N_over);
 w2d_over = w_over*w_over';
 w1d_over = reshape(w2d_over,[N1_over*N1_over,1])';
+disp("Generating Overintegrated Values")
 [dphi_dxi_over, dphi_deta_over, dphi_dx_over, dphi_dy_over, dpdx_dpdx_over, dpdy_dpdy_over, dpdx_dpdy_over, ...
         dpdx_dpdx_flat_over, dpdy_dpdy_flat_over, dpdx_dpdy_flat_over,phi_2d_flat] ...
-    = get_phi_grads2(N1,E,J_x,J_y,N_over);
+    = get_phi_grads2(N1,E,J_x,J_y,N_over,N_en_y);
 dphi_dx_flat_over = reshape(dphi_dx_over,N1_over*N1_over,N1*N1,E);
 dphi_dy_flat_over = reshape(dphi_dy_over,N1_over*N1_over,N1*N1,E);
 if en_on
