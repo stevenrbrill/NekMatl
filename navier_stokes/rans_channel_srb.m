@@ -18,36 +18,40 @@ pointstyles = {'ko','bo','ro','go','co','mo','k^','b^','r^','g^','c^','m^','ks',
 % pgrads = 3.25e-3 for N=4, E=8, exp mesh
 % pgrads = 9.25e-3 for N=4, E=6, uniform
 % pgrads = 1.8e-4 for N=4, E=8, uniform, enrich
+% Moser info: u_tau = 5.43496e-02, Re_tau = 543
+% y/delta y^+, U^+, dUdy, W, P
 
 format compact;
 format short;
-format long;
 mu = 1/10000; %1/395; 1/6874;
 rho = 1;
 Re = rho/mu; 
-pgrad = 7e-5; %3.25e-3; 9.25e-3; %2.5e-4; % 9.25e-3;
-force_pgrad = 1;
+pgrad = 3.25e-3; 9.25e-3; %2.5e-4; % 9.25e-3;
+force_pgrad = 0;
+Re_tau = 550;
+pgrad = (Re_tau*mu).^2*rho;
 
-N=4; % polynomial order  
+
+N=6; % polynomial order  
 Ex=1; % Number of elements in x
 Ey=6; % Number of elements in y
-Tfinal=1000; 
+Tfinal=400; 
 CFL=0.05;
-en_on = 0;
+en_on = 2;
 N_en_y = 1; 
-N_over = N;
+N_over = 80; % N
 delay_en = 0;
 en_start_time = 100;
-head = 'debug';
+head = 'working_';
 
 rans_on = 1;
 exp_mesh = 0;
 
-dir_name = [head,'re',num2str(ceil(Re)),'_p',num2str(N),'_e',num2str(Ey),'_exp',num2str(exp_mesh),'_en',num2str(en_on)];
+dir_name = [head,'re',num2str(ceil(Re)),'_p',num2str(N),'_e',num2str(Ey),'_exp',num2str(exp_mesh),'_en',num2str(en_on),'_forcing',num2str(force_pgrad)];
 soln_dir = dir_name;
 plot_soln = 1;
-save_soln = 0;
-plot_int = 1000;
+save_soln = 1;
+plot_int = 5000;
 save_soln_int = 5000;
 restart = 0;
 rst_step = 300000;
