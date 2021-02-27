@@ -80,7 +80,7 @@ Re_tau = 550;
 nu = 1/Re_tau;
 kap = 0.41;
 beta = 5.2;
-dypdy = u_tau/nu;
+dypdy = Re_tau;
 ypb = 11.062299784340414;
 yp = @(y) (1-abs(y))*Re_tau;
 u_tau = Re_tau*mu;
@@ -139,7 +139,7 @@ omg_ic = @(x,y) 0.0*x + 0.5*Re*u_tau*u_tau*fact(Yp(y));
 % Turbulent channel
 Re_tau = 550;
 u_tau = Re_tau*mu/rho;
-Yp = @(Y) max((1-abs(Y))*Re_tau,1e-3)+eps;
+Yp = @(Y) max((1-abs(Y))*Re_tau,0); %1e-3)+eps;
 C=5.17;
 kap=0.41;
 eps_ic = 0; %1e-2;
