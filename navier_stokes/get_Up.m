@@ -23,9 +23,11 @@ function [Yp,Up] = get_Up(Y,U,u_tau,mu,lotw,Ey,N,psi,en_on)
     figure
     semilogx(Yp_sample,lotw(Yp_sample),'k-')
     hold on
+    moser=load('moser_data/LM_Channel_0550_mean_prof.dat');
+    plot(moser(:,2),moser(:,3),'g--o')
     semilogx(Yp_sample,Up_sample,'r--')
     semilogx(Yp,Up,'bo')
-    legend('Law of the Wall','Enriched Solution','Nodal Values')
+    legend('Law of the Wall','Moser DNS','Enriched Solution','Nodal Values')
     
 
 end

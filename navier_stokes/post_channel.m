@@ -48,6 +48,9 @@ my_yticks(1) = Ys(1);
 for i=1:Ey
     my_yticks(i+1) = Ys(i*(N+1));
 end
+moser=load('moser_data/LM_Channel_0550_mean_prof.dat');
+plot(moser(:,3)*5.43496e-02,(moser(:,1))-1,'g-o')
+hold on
 for i = 1:Ey
     plot(u_mean,Ys,'b-o')
     set(gca, 'YGrid', 'on', 'XGrid', 'off')

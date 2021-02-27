@@ -163,14 +163,25 @@ omg_ic = @(x,y) 0.0*x + 0.5*Re*u_tau*u_tau*fact(Yp(y));
 %%
 %%
 %%
+moser=load('moser_data/LM_Channel_0550_mean_prof.dat');
 %% Plot psi
 figure(5)
 ys_plot = linspace(-1,1,1000);
 plot(psi{1}(0,ys_plot),ys_plot)
+hold on
+plot(moser(:,3)*5.43496e-02,(moser(:,1))-1,'g--o')
 xlabel('\psi')
 ylabel('y')
 set(gca, 'YGrid', 'on', 'XGrid', 'off')
 yticks(linspace(-1,1,Ey+1));
+figure(6)
+ys_plot = linspace(-1,1,1000);
+plot(gpsi{2}(0,ys_plot),ys_plot)
+xlabel('\partial\psi / \partial y')
+ylabel('y')
+set(gca, 'YGrid', 'on', 'XGrid', 'off')
+yticks(linspace(-1,1,Ey+1));
+
 
 %% Begin Solve
 E=Ex*Ey; % Total number of elements
