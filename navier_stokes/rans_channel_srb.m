@@ -832,4 +832,5 @@ if  save_soln
     figure(2)
     title(fig_title)
     saveas(gcf,channel_file);
-endtoc()
+end
+toc()
