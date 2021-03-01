@@ -33,22 +33,23 @@ Re_tau = 550;
 pgrad = (Re_tau*mu).^2*rho;
 
 
-N=6; % polynomial order  
+N=4; % polynomial order  
 Ex=1; % Number of elements in x
 Ey=6; % Number of elements in y
 Tfinal=400; 
 CFL=0.05;
 en_on = 2;
 N_en_y = 1; 
-N_over = 80; % N
+N_over = N; % N
 delay_en = 0;
 en_start_time = 100;
-head = 'working_';
+head = '';
+fig_header = '';
 
 rans_on = 1;
 exp_mesh = 0;
 
-dir_name = [head,'re',num2str(ceil(Re)),'_p',num2str(N),'_e',num2str(Ey),'_exp',num2str(exp_mesh),'_en',num2str(en_on),'_forcing',num2str(force_pgrad)];
+dir_name = [head,'re',num2str(ceil(Re)),'_p',num2str(N),'_e',num2str(Ey),'_exp',num2str(exp_mesh),'_en',num2str(en_on),'_over',num2str(N_over),'_forcing',num2str(force_pgrad)];
 soln_dir = dir_name;
 plot_soln = 1;
 save_soln = 1;
@@ -818,5 +819,17 @@ end
 if  save_soln
     fname = strcat(soln_dir,"/soln_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ey),"_step_",num2str(step),".mat");
     save(fname);
-end
-toc()
+    fig_title = [fig_header,'Enriched N=',num2str(Ey),' P=',num2str(N)];
+    lotw_file = strcat(soln_dir,"/lotw_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ey),"_step_",num2str(step),".jpg");
+    dom_file = strcat(soln_dir,"/dom_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ey),"_step_",num2str(step),".jpg");
+    channel_file = strcat(soln_dir,"/channel_Re_",num2str(Re),"_P_",num2str(N),"_",num2str(Ex),"x",num2str(Ey),"_step_",num2str(step),".jpg");
+    figure(7)
+    title(fig_title)
+    saveas(gcf,lotw_file);
+    figure(1)
+    title(fig_title)
+    saveas(gcf,dom_file);
+    figure(2)
+    title(fig_title)
+    saveas(gcf,channel_file);
+endtoc()
