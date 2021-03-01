@@ -59,7 +59,7 @@ for i = 1:Ey
 end
 hold off
 %         xlim([0,1])
-ylim([-1,1])
+ylim([-1,0])
 xlabel('u')
 ylabel('y')
 %         pause(.1);
