@@ -27,7 +27,7 @@ function [Yp,Up] = get_Up(Y,U,u_tau,mu,lotw,Ey,N,psi,en_on)
     plot(moser(:,2),moser(:,3),'g--o')
     semilogx(Yp_sample,Up_sample,'r--')
     semilogx(Yp,Up,'bo')
-    legend('Law of the Wall','Moser DNS','Enriched Solution','Nodal Values')
+    legend({'Law of the Wall','Moser DNS','Enriched Solution','Nodal Values'},'Location','northwest')
     
 
 end
