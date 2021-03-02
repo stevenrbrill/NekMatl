@@ -27,10 +27,10 @@ format short;
 mu = 1/10000; %1/395; 1/6874;
 rho = 1;
 Re = rho/mu; 
-pgrad = 3.25e-3; 9.25e-3; %2.5e-4; % 9.25e-3;
+pgrad = 3.25e-3; %9.25e-3; %2.5e-4; % 9.25e-3;
 force_pgrad = 0;
 Re_tau = 550;
-pgrad = (Re_tau*mu).^2*rho;
+% pgrad = (Re_tau*mu).^2*rho;
 
 
 N=4; % polynomial order  
@@ -40,7 +40,7 @@ Tfinal=400;
 CFL=0.05;
 en_on = 2;
 N_en_y = 1; 
-N_over = N; % N
+N_over = 40; % N
 delay_en = 0;
 en_start_time = 100;
 head = '';
@@ -53,8 +53,8 @@ dir_name = [head,'re',num2str(ceil(Re)),'_p',num2str(N),'_e',num2str(Ey),'_exp',
 soln_dir = dir_name;
 plot_soln = 1;
 save_soln = 1;
-plot_int = 5000;
-save_soln_int = 5000;
+plot_int = 10000;
+save_soln_int = 10000;
 restart = 0;
 rst_step = 300000;
 
@@ -79,8 +79,8 @@ hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
 
     
 % Law of the wall
-u_tau = sqrt(0.316./(Re.^0.25)/8);
-Re_tau = u_tau/mu; %Re;
+% u_tau = sqrt(0.316./(Re.^0.25)/8);
+% Re_tau = u_tau/mu; %Re;
 Re_tau = 550;
 % u_tau = 1;
 nu = 1/Re_tau;
@@ -108,18 +108,18 @@ hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) u_tau*(((yp(y) <= ypb).*0 + (yp(y) > ypb).*-
 %         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 
 % Reicher Law of the Wall
-Re_tau = 550;
-C=5.17;
-kap=0.41;
-dypdy = Re_tau;
-yp = @(y) (1-abs(y))*Re_tau;
-u_tau = Re_tau*mu;
-psi = {@(x,y) u_tau*(1/kap.*log(1+kap.*yp(y))+(C-1./kap.*log(kap)).*(1-exp(-yp(y)/11)-yp(y)/11.*exp(-yp(y)/3))) + 0.*x,...
-    @(x,y) 0.*y + 0.*x};
-gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) -1*sign(y).*dypdy*u_tau.*(1./(1+kap.*yp(y))+(C-1./kap.*log(kap)).*(1/11*exp(-yp(y)/11)+(yp(y)-3)/33.*exp(-yp(y)/3))) + 0.*x,...
-        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) dypdy*dypdy*u_tau*(-kap./((1+kap.*yp(y)).^2)+(C-1./kap.*log(kap)).*(-1/121*exp(-yp(y)/11)+(-yp(y)+6)/99.*exp(-yp(y)/3))) + 0.*x,...
-        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% Re_tau = 550;
+% C=5.17;
+% kap=0.41;
+% dypdy = Re_tau;
+% yp = @(y) (1-abs(y))*Re_tau;
+% u_tau = Re_tau*mu;
+% psi = {@(x,y) u_tau*(1/kap.*log(1+kap.*yp(y))+(C-1./kap.*log(kap)).*(1-exp(-yp(y)/11)-yp(y)/11.*exp(-yp(y)/3))) + 0.*x,...
+%     @(x,y) 0.*y + 0.*x};
+% gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) -1*sign(y).*dypdy*u_tau.*(1./(1+kap.*yp(y))+(C-1./kap.*log(kap)).*(1/11*exp(-yp(y)/11)+(yp(y)-3)/33.*exp(-yp(y)/3))) + 0.*x,...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) dypdy*dypdy*u_tau*(-kap./((1+kap.*yp(y)).^2)+(C-1./kap.*log(kap)).*(-1/121*exp(-yp(y)/11)+(-yp(y)+6)/99.*exp(-yp(y)/3))) + 0.*x,...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 
 
 %% Initial Conditions
@@ -171,13 +171,15 @@ moser=load('moser_data/LM_Channel_0550_mean_prof.dat');
 %% Plot psi
 figure(5)
 ys_plot = linspace(-1,1,1000);
-plot(psi{1}(0,ys_plot),ys_plot)
 hold on
 plot(moser(:,3)*5.43496e-02,(moser(:,1))-1,'g--o')
+plot(psi{1}(0,ys_plot),ys_plot)
 xlabel('\psi')
 ylabel('y')
 set(gca, 'YGrid', 'on', 'XGrid', 'off')
 yticks(linspace(-1,1,Ey+1));
+ylim([-1,0])
+legend('Moser Data','Enrichment Function')
 figure(6)
 ys_plot = linspace(-1,1,1000);
 plot(gpsi{2}(0,ys_plot),ys_plot)
