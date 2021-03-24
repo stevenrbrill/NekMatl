@@ -29,6 +29,7 @@ CFL=0.1;
 u_ic = Re;
 pert = 0.0;
 f_ic = @(x,y) u_ic*(1-y.^2)/2;
+N_over = N;
 
 %% Enrichment information
 en_on = 2; % 0 = no enrichment, 1 = implicit, 2 = explicit
