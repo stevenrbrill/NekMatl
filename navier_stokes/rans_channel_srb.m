@@ -77,7 +77,29 @@ hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
 %         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 %    
 
-    
+% en_mag = 1;
+% [Ah,Bh,Ch,Dh,z,w]=semhat(N);
+% ytest = 1-((1-2/Ey)+(z(2)+1)/2*2/Ey);
+% ytest2 = 1-(1-2/Ey);
+% mat = [ytest^2,ytest,1; ytest2^2,ytest2,1; 2*ytest,1,0];
+% rhs = [en_mag*(0.5*(1-(1-ytest)^2));0;en_mag*(1-ytest)];
+% poly = mat\rhs;
+% % poly = polyfit([ytest,ytest2],[en_mag*(0.5*(1-(1-ytest)^2)),0],1);
+% ypoly = @(y) polyval(poly,y);
+% dypoly = @(y) polyval(polyder(poly),y);
+% yp = @(y) 1-abs(y);
+% scale = @(y) ((yp(y)>=ytest).*ypoly(yp(y)));
+% dscale = @(y) ((yp(y)<ytest)*0 + (yp(y)>=ytest).*dypoly(yp(y))).*-sign(y);
+% psi = {@(x,y) en_mag*(0.5*(1 - y.^2) + 0.*x).*(yp(y)<=ytest) + scale(y).*(yp(y)<=ytest2).*(yp(y)>ytest) + 0*y, ...
+%     @(x,y) 0.*y + 0.*x};
+% gpsi = {@(x,y) 0.*y + 0.*x, ...
+%         @(x,y) (en_mag*(-1.*y + 0.*x).*(yp(y)<=ytest)) + dscale(y).*(yp(y)<=ytest2).*(yp(y)>ytest), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
+%         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+
+
+      
 % Law of the wall
 % u_tau = sqrt(0.316./(Re.^0.25)/8);
 % Re_tau = u_tau/mu; %Re;
@@ -96,7 +118,44 @@ gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) -1*sign(y).*u_tau.*(((yp(y) <= ypb).*1 + (yp
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) u_tau*(((yp(y) <= ypb).*0 + (yp(y) > ypb).*-1./(kap*(yp(y)+eps).^2))*dypdy*dypdy + 0.*x),...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
-    
+% %     
+% % Re_tau = 550;
+% % % u_tau = 1;
+% % nu = 1/Re_tau;
+% % kap = 0.41;
+% % beta = 5.2;
+% % dypdy = Re_tau;
+% % ypb = 11.062299784340414;
+% % yp = @(y) (1-abs(y))*Re_tau;
+% % u_tau = Re_tau*mu;
+% % lotw = @(yp) ((yp <= ypb).*yp + (yp > ypb).*(1./kap.*log(yp+eps)+beta));
+% % psi = {@(x,y) u_tau*((yp(y) <= ypb).*yp(y) + (yp(y) > ypb).*(1./kap.*log(yp(y)+eps)+beta) + 0.*x), @(x,y) 0.*y + 0.*x};
+% % gpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) -1*sign(y).*u_tau.*(((yp(y) <= ypb).*1 + (yp(y) > ypb).*1./(kap*(yp(y)+eps)))*dypdy + 0.*x),...
+% %         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% % hpsi = {@(x,y) 0.*y + 0.*x,  @(x,y) u_tau*(((yp(y) <= ypb).*0 + (yp(y) > ypb).*-1./(kap*(yp(y)+eps).^2))*dypdy*dypdy + 0.*x),...
+% %         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+% %     
+% % 
+% psi_base = @(x,y) u_tau*((yp(y) <= ypb).*yp(y) + (yp(y) > ypb).*(1./kap.*log(yp(y)+eps)+beta)) + 0.*x;
+% gpsi_base = @(x,y) -1*sign(y).*u_tau.*(((yp(y) <= ypb).*1 + (yp(y) > ypb).*1./(kap*(yp(y)+eps)))*dypdy + 0.*x);
+% [Ah,Bh,Ch,Dh,z,w]=semhat(N);
+% ytest = 1-((1-2/Ey)+(z(2)+1)/2*2/Ey);
+% ytest2 = 1-(1-2/Ey);
+% mat = [ytest^2,ytest,1; ytest2^2,ytest2,1; 2*ytest,1,0];
+% rhs = [psi_base(0,1-ytest);0;gpsi_base(0,1-ytest)];
+% poly = mat\rhs;
+% % poly = polyfit([ytest,ytest2],[en_mag*(0.5*(1-(1-ytest)^2)),0],1);
+% ypoly = @(y) polyval(poly,y);
+% dypoly = @(y) polyval(polyder(poly),y);
+% ywall = @(y) 1-abs(y);
+% scale = @(y) ((ywall(y)>=ytest).*ypoly(ywall(y)));
+% dscale = @(y) ((ywall(y)<ytest)*0 + (ywall(y)>=ytest).*dypoly(ywall(y))).*-sign(y);
+% psi = {@(x,y) psi_base(x,y).*(ywall(y)<=ytest) + scale(y).*(ywall(y)<=ytest2).*(ywall(y)>ytest) + 0*y, ...
+%     @(x,y) 0.*y + 0.*x};
+% gpsi = {@(x,y) 0.*y + 0.*x, ...
+%         @(x,y) gpsi_base(x,y).*(ywall(y)<=ytest) + dscale(y).*(ywall(y)<=ytest2).*(ywall(y)>ytest), ...
+%         @(x,y) 0.*y + 0.*x, ...
+%         @(x,y) 0.*y + 0.*x};
 
 % 1/7th
 % mag = 1;

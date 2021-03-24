@@ -50,6 +50,7 @@ for i=1:Ey
 end
 moser=load('moser_data/LM_Channel_0550_mean_prof.dat');
 plot(moser(:,3)*5.43496e-02,(moser(:,1))-1,'g-o')
+% plot(0.5*(1-Ys.^2),Ys,'g-o')
 hold on
 for i = 1:Ey
     plot(u_mean,Ys,'b-o')

@@ -37,6 +37,30 @@ N_en_y = 1;
 en_mag = 1;
 psi = {@(x,y) en_mag*(0.5*(1 - y.^2) + 0.*x), @(x,y) 0.*y + 0.*x};
 gpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1.*y + 0.*x), ...
+            @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
+        @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
+    
+    
+[Ah,Bh,Ch,Dh,z,w]=semhat(N);
+ytest = 1-((1-2/Ey)+(z(2)+1)/2*2/Ey);
+ytest2 = 1-(1-2/Ey);
+mat = [ytest^2,ytest,1; ytest2^2,ytest2,1; 2*ytest,1,0];
+rhs = [en_mag*(0.5*(1-(1-ytest)^2));0;en_mag*(1-ytest)];
+poly = mat\rhs;
+% mat = [ytest,1; ytest2,1];
+% rhs = [en_mag*(0.5*(1-(1-ytest)^2));0];
+% poly = mat\rhs;
+% poly = polyfit([ytest,ytest2],[en_mag*(0.5*(1-(1-ytest)^2)),0],1);
+ypoly = @(y) polyval(poly,y);
+dypoly = @(y) polyval(polyder(poly),y);
+yp = @(y) 1-abs(y);
+scale = @(y) ((yp(y)>=ytest).*ypoly(yp(y)));
+dscale = @(y) ((yp(y)<ytest)*0 + (yp(y)>=ytest).*dypoly(yp(y))).*-sign(y);
+psi = {@(x,y) en_mag*(0.5*(1 - y.^2) + 0.*x).*(yp(y)<=ytest) + scale(y).*(yp(y)<=ytest2).*(yp(y)>ytest) + 0*y, ...
+    @(x,y) 0.*y + 0.*x};
+gpsi = {@(x,y) 0.*y + 0.*x, ...
+        @(x,y) (en_mag*(-1.*y + 0.*x).*(yp(y)<=ytest)) + dscale(y).*(yp(y)<=ytest2).*(yp(y)>ytest), ...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
 hpsi = {@(x,y) 0.*y + 0.*x, @(x,y) en_mag*(-1 - 0.*y + 0.*x), ...
         @(x,y) 0.*y + 0.*x, @(x,y) 0.*y + 0.*x};
