@@ -24,7 +24,7 @@ dpdx = 1;
 %N=16; E=5; N1=N+1; nL=N1*N1*E;  % 16th order
 N=4; % polynomial order  
 Ex=1; % Number of elements in x
-Ey=5; % Number of elements in y
+Ey=6; % Number of elements in y
 CFL=0.1;
 u_ic = Re;
 pert = 0.0;
