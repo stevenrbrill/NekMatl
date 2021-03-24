@@ -153,99 +153,42 @@ G_uv(nn+1:2*nn,nn+1:2*nn) = Gsb;
 G_uv = sparse(G_uv);
 
 
+%%
+[L_x,L_y,J_x,J_y] = dir_jac(E,X,Y);
+w2d = w*w';
+w1d = reshape(w2d,[N1*N1,1])';
+[dphi_dxi, dphi_deta, dphi_dx, dphi_dy, dpdx_dpdx, dpdy_dpdy, dpdx_dpdy, ...
+        dpdx_dpdx_flat, dpdy_dpdy_flat, dpdx_dpdy_flat] ...
+    = get_phi_grads(N1,Dh,E,J_x,J_y);
+dphi_dx_flat = reshape(dphi_dx,N1*N1,N1*N1,E);
+dphi_dy_flat = reshape(dphi_dy,N1*N1,N1*N1,E);
 
-%% Assemble enrichment matrices
-psi_xy{1} = psi{1}(X,Y);
-psi_xy{2} = psi{2}(X,Y);
-if en_on
-    disp("Computing enrichment")
-    [Mp,Sp,T1,T2,T1_alt,T1_alt2,Mp_alt,Sp_alt,z_en,w_en] = enrich_mats(X,Y,E,N,psi,gpsi,hpsi,J);
-    nb = N1*N1;
-        
-    for k=1:2
-        Mp_all{k} = zeros(nb*E,nb*E);
-        Sp_all{k} = zeros(nb*E,nb*E);
-        T1_all{k} = zeros(N+1,N+1,E);
-        T2_all{k} = zeros(N+1,N+1,E);
-        T1_alt_all{k} = zeros(N+1,N+1,E);
-        T1_alt2_all{k} = zeros(N+1,N+1,E);
-        Mp_alt_all{k} = zeros(nb*E,nb*E);
-        Sp_alt_all{k} = zeros(nb*E,nb*E);
-        
-        T1_rs{k} = reshape(T1{k},[N+1,N+1,E]);
-        T2_rs{k} = reshape(T2{k},[N+1,N+1,E]);
-        T1_alt_rs{k} = reshape(T1_alt{k},[N+1,N+1,E]);
-        T1_alt2_rs{k} = reshape(T1_alt2{k},[N+1,N+1,E]);
-        
-        % TODO: Assemble differently for different elements
-        for iy = 1:Ey
-            for ix = 1:Ex
-                i = (iy-1)*Ex+ix;
-                if ((iy <= N_en_y) || (iy > Ey-N_en_y))
-                    Mp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Mp{k}(:,:,i);
-                    Sp_all{k}((i-1)*nb+1:i*nb,(i-1)*nb+1:i*nb) = Sp{k}(:,:,i);
-                    T1_all{k}(:,:,i) = T1_rs{k}(:,:,i); 
-                    T2_all{k}(:,:,i) = T2_rs{k}(:,:,i);
-                    T1_alt_all{k}(:,:,i) = T1_alt_rs{k}(:,:,i); 
-                    T1_alt2_all{k}(:,:,i) = T1_alt2_rs{k}(:,:,i); 
-                end                
-            end
-        end
-        %%
-        if k == 1
-            Mp_check_1 = full(Mp_all{k});
-            Sp_check_1 = full(Sp_all{k});
-            T1_check_1 = full(T1_all{k});
-            T2_check_1 = full(T2_all{k});
-            Mp_check_2 = zeros(size(Mp_all{k}));
-            Sp_check_2 = zeros(size(Mp_all{k}));
-            T1_check_2 = zeros(size(Mp_all{k}));
-            T2_check_2 = zeros(size(Mp_all{k}));
-        elseif k == 2
-            Mp_check_2 = full(Mp_all{k});
-            Sp_check_2 = full(Sp_all{k});
-            T1_check_2 = full(T1_all{k});
-            T2_check_2 = full(T2_all{k});
-        end
-        %%
-        Mp_all{k} = sparse(Mp_all{k});        
-        Mp_full{k} = Mp_all{k};
-        Mp_all_c{k} = R*Q'*apply_en_cont(Mp_all{k},en_b_nodes,psi_p);
-        Mp_all{k} = R*Q'*Mp_all{k}*Q*R';
-        Sp_all{k} = sparse(Sp_all{k});
-        Sp_full{k} = Sp_all{k};
-        Sp_all_c{k} = R*Q'*apply_en_cont(Sp_all{k},en_b_nodes,psi_p);
-        Sp_all{k} = R*Q'*Sp_all{k}*Q*R';
-        
-        Mp_alt_all{k} = sparse(Mp_alt_all{k});        
-        Mp_alt_all_c{k} = R*Q'*apply_en_cont(Mp_alt_all{k},en_b_nodes,psi_p);
-        Mp_alt_all{k} = R*Q'*Mp_alt_all{k}*Q*R';   
-    end
-    
-    Mp_uv = zeros(2*nn);
-    Sp_uv = zeros(2*nn);
-    Mp_uv(1:nn,1:nn) = Mp_all{1};
-    Mp_uv(1:nn,nn+1:2*nn) = Mp_all{2};
-    Sp_uv(1:nn,1:nn) = Sp_all{1};
-    Sp_uv(nn+1:2*nn,nn+1:2*nn) = Sp_all{1};
-    
-    %%
-    Mp_uv_check = zeros(2*nL);
-    Mp_uv_check(1:nL,1:nL) = Mp_check_1;
-    Mp_uv_check(1:nL,nL+1:2*nL) = Mp_check_2;
-    Sp_uv_check(1:nL,1:nL) = Sp_check_1;
-    Sp_uv_check(nL+1:2*nL,nL+1:2*nL) = Sp_check_1;
-    Mp_q_1 = full(Mp_all{1});
-    Sp_q_1 = full(Sp_all{1});
-    
-    Mp_q_2 = full(Mp_all{2});
-    Sp_q_2 = full(Sp_all{2});
-    %%
-
-    Mp_uv = sparse(Mp_uv);
-    Sp_uv = sparse(Sp_uv);   
+w2d_e = zeros(N+1,N+1,E);
+for ie = 1:E
+    w2d_e(:,:,ie) = w2d*L_x(ie)/2*L_y(ie)/2;
 end
 
+A_x = form_Ax(N1,E,w2d,J_x,J,dpdx_dpdx,ones(size(J)));
+A_y = form_Ay(N1,E,w2d,J_y,J,dpdy_dpdy,ones(size(J)));
+A_xy = form_Axy(N1,E,w2d,J_x,J_y,J,dpdx_dpdy,ones(size(J)));
+
+
+%% Assemble enrichment matrices
+psi_xy = zeros(N+1,N+1,E);
+N1_over = N_over + 1;
+[z_over,w_over] = zwgll(N_over);
+w2d_over = w_over*w_over';
+w1d_over = reshape(w2d_over,[N1_over*N1_over,1])';
+disp("Generating Overintegrated Values")
+[dphi_dxi_over, dphi_deta_over, dphi_dx_over, dphi_dy_over, dpdx_dpdx_over, dpdy_dpdy_over, dpdx_dpdy_over, ...
+        dpdx_dpdx_flat_over, dpdy_dpdy_flat_over, dpdx_dpdy_flat_over,phi_2d_flat] ...
+    = get_phi_grads2(N1,E,J_x,J_y,N_over,N_en_y);
+dphi_dx_flat_over = reshape(dphi_dx_over,N1_over*N1_over,N1*N1,E);
+dphi_dy_flat_over = reshape(dphi_dy_over,N1_over*N1_over,N1*N1,E);
+if en_on
+    [psi_xy,psi_xy_act,gpsi_xy_act,Sp_all,Sp_all_Q,Jac_e_flat,gpsi_e_flat,Mp_uv,Sp_uv,Mp_all_c,Sp_all_c,Mp_full,Sp_full,Mp_all,T1_all,T2_all,T1_alt_all] = ...
+        assemble_enrichment(X,Y,Ex,Ey,E,N,N1,nn,nL,J,Q,R,N_en_y,psi,gpsi,hpsi,en_b_nodes,psi_p,N_over);
+end
 %%
 
 dxmin=pi*(z(N1)-z(N))/(2*Ex); % Get min dx for CFL constraint
